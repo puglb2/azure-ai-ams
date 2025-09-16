@@ -1,1 +1,3 @@
-
+prov_001|Alex Martin|Therapist|bcbs,aetna,cigna|Phoenix, AZ
+prov_002|Jamie Lee|Psychiatrist|bcbs,uhc|Scottsdale, AZ
+prov_003|Riley Chen|Therapist|bcbs|Tempe, AZ
