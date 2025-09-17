@@ -151,6 +151,23 @@ module.exports = async function (context, req){
 
     if (!reply || (clarifiersAsked >= 2 && looksLikeOpener(reply))) {
       reply = "Based on what you’ve shared, I recommend starting with therapy and considering psychiatry if symptoms persist or affect daily life. I can match you with an in-network provider—what’s your insurance and preferred location?";
+    // --- Extract user-provided info from recent window (history + latest) ---
+const transcriptWindow = [...normalizedHistory.map(m => m.content), userMessage].join(" ").toLowerCase();
+
+// crude insurance detection
+const INS_PAT = /\b(bcbs|blue\s*cross|bluecross|aetna|cigna|uhc|united\s*healthcare|kaiser|medicare|medicaid|tricare|ambetter)\b/i;
+const insMatch = transcriptWindow.match(INS_PAT);
+const insuranceDetected = insMatch ? insMatch[1].toUpperCase().replace(/\s+/g," ") : "";
+
+// zip & simple city cue
+const ZIP_PAT = /\b\d{5}\b/;
+const CITY_PAT = /\b(phoenix|scottsdale|tempe|mesa|chandler|glendale|tucson|flagstaff|yuma|peoria|gilbert)\b/i; // add your cities
+const zipDetected = (transcriptWindow.match(ZIP_PAT) || [])[0] || "";
+const cityDetected = (transcriptWindow.match(CITY_PAT) || [])[0] || "";
+
+// convenience flags
+const hasLocation = !!(zipDetected || cityDetected);
+const hasInsurance = !!insuranceDetected;
     }
 
     if (!resp.ok){
