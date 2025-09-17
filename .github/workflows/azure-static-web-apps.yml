@@ -1,4 +1,5 @@
 name: Azure Static Web Apps CI/CD
+
 on:
   push:
     branches: [ main ]
@@ -6,17 +7,80 @@ on:
     types: [opened, synchronize, reopened, closed]
     branches: [ main ]
 
+# ---- EDIT THESE THREE if your app/api live in subfolders ----
+env:
+  APP_LOCATION: "/"    # folder with index.html + package.json (e.g., "/", "web")
+  API_LOCATION: "api"  # Azure Functions folder, or "" if none
+  OUTPUT_LOCATION: "dist"  # build output (Vite defaults to "dist")
+
 jobs:
   build_and_deploy_job:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v4
-      - name: Build And Deploy
+      # 0) Checkout (and avoid that git config warning):
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      # 1) Sanity + visibility: show structure the action will build/deploy
+      - name: Debug project layout
+        run: |
+          echo "=== repo root ==="; ls -la
+          echo "=== app location ($APP_LOCATION) ==="; ls -la "$APP_LOCATION" || true
+          echo "=== api location ($API_LOCATION) ==="; ls -la "$API_LOCATION" || true
+          echo "=== package.json (if any) ==="; sed -n '1,120p' "$APP_LOCATION/package.json" || true
+          echo "=== index.html (if any) ==="; sed -n '1,120p' "$APP_LOCATION/index.html" || true
+
+      # 2) Build the front-end if this looks like a Node app
+      #    - If a lockfile exists, use npm ci; else npm install (so first build still works).
+      - name: Build app (if Node project)
+        working-directory: ${{ env.APP_LOCATION }}
+        shell: bash
+        run: |
+          if [ -f package.json ]; then
+            echo "package.json found in $PWD"
+            if jq -er '.scripts.build' package.json >/dev/null 2>&1; then
+              if [ -f package-lock.json ]; then
+                echo "Using npm ci (lockfile present)"
+                npm ci
+              else
+                echo "Using npm install (no lockfile yet)"
+                npm install
+              fi
+              echo "Running build script"
+              npm run build
+              echo "Build finished. Listing output folder:"
+              ls -la "${{ env.OUTPUT_LOCATION }}" || (echo "No output at ${{ env.OUTPUT_LOCATION }}"; exit 1)
+            else
+              echo "No build script in package.json; skipping app build."
+            fi
+          else
+            echo "No package.json at $PWD; treating as static files."
+          fi
+
+      # 3) Fail early if the deployment token is missing (clearer error than the action’s)
+      - name: Ensure deployment token exists
+        if: ${{ github.event_name == 'push' }}
+        run: |
+          if [ -z "${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}" ]; then
+            echo "ERROR: Missing secret AZURE_STATIC_WEB_APPS_API_TOKEN"
+            exit 1
+          fi
+
+      # 4) Deploy
+      #    - For PRs from forks (no secrets), we upload the build artifacts for preview, but skip actual deploy.
+      #    - For pushes to main (with secrets), we deploy to production.
+      - name: Build & Deploy to Azure Static Web Apps
         uses: Azure/static-web-apps-deploy@v1
         with:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
           action: upload
-          app_location: "/"
-          api_location: "api"
-          output_location: "dist"
-          app_build_command: "npm ci && npm run build"
+          app_location: ${{ env.APP_LOCATION }}
+          api_location: ${{ env.API_LOCATION }}
+          app_artifact_location: ${{ env.OUTPUT_LOCATION }}
+          # If you don't want the action to rerun the app build, uncomment the next line:
+          # skip_app_build: true
+          # For PRs without secrets, don't fail the workflow:
+          skip_deploy_on_missing_secrets: true
