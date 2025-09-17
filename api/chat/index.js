@@ -114,9 +114,9 @@ module.exports = async function (context, req){
       return;
     }
 
-    // history from client (✅ last 8 TOTAL messages)
+    // history from client 
     const history = Array.isArray(req.body?.history) ? req.body.history : [];
-    const normalizedHistory = history.slice(-12).map(m => ({
+    const normalizedHistory = history.slice(-24).map(m => ({
       role: m?.role === 'assistant' ? 'assistant' : 'user',
       content: ((m?.content || '') + '').trim()
     })).filter(m => m.content);
