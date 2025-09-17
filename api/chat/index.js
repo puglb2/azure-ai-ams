@@ -16,7 +16,7 @@ function initConfig(){
   if (FAQ_SNIPPET) {
     SYS_PROMPT += `
 
-# FAQ (summarize when answering)
+# FAQ (summarize when relevant)
 ${FAQ_SNIPPET}`.trim();
   }
   if (POLICIES_SNIPPET) {
@@ -28,12 +28,12 @@ ${POLICIES_SNIPPET}`.trim();
 
   SYS_PROMPT += `
 
-# Conversation flow:
-- Ask at most 2 brief clarifying questions.
-- Then provide a concise recommendation (therapy, psychiatry, or both) with 1–2 sentence rationale.
-- Offer to match to an in-network provider; ask for insurance + location if missing.
-- Routine help requests are not crisis; only explicit self-harm or immediate danger is crisis.
-- Output must be plain text (no tools), keep it concise.`;
+# Conversation guidance (do not quote this):
+- Ask at most two brief clarifying questions before offering a next step.
+- Then offer a concise, concrete recommendation (therapy, psychiatry, or both) with a short rationale.
+- Offer in-network matching; ask for only the information that is missing (insurance and location).
+- Routine help requests are not crisis; only explicit imminent risk is crisis.
+- Keep responses concise, natural, and varied. Plain text only.`;
 }
 
 // ---------- AOAI helper ----------
@@ -82,22 +82,20 @@ async function querySearch(q){
   return items.slice(0,3);
 }
 
-// crude “opener” detection to stop endless “tell me more”
+// detect “opener-ish” responses so we can nudge progress
 const looksLikeOpener = (txt) =>
-  /can you (share|tell)|what’s been going on|how (has|is) that/i.test((txt||""));
+  /can you (share|tell)|what’s been going on|how (has|is) that|can you say more/i.test((txt||""));
 
-// extract user-provided insurance/city/zip from recent messages
+// extract user-provided insurance/city/zip from recent messages (for facts, not templating)
 function extractUserInfo(normalizedHistory, userMessage){
   const transcriptWindow = [...normalizedHistory.map(m => m.content), userMessage].join(" ").toLowerCase();
 
-  // insurance
   const INS_PAT = /\b(bcbs|blue\s*cross|bluecross|aetna|cigna|uhc|united\s*healthcare|kaiser|medicare|medicaid|tricare|ambetter)\b/i;
   const insMatch = transcriptWindow.match(INS_PAT);
   const insuranceDetected = insMatch ? insMatch[1].toUpperCase().replace(/\s+/g," ") : "";
 
-  // zip / city
   const ZIP_PAT = /\b\d{5}\b/;
-  const CITY_PAT = /\b(phoenix|scottsdale|tempe|mesa|chandler|glendale|tucson|flagstaff|yuma|peoria|gilbert)\b/i; // add more as needed
+  const CITY_PAT = /\b(phoenix|scottsdale|tempe|mesa|chandler|glendale|tucson|flagstaff|yuma|peoria|gilbert)\b/i; // extend as needed
   const zipDetected = (transcriptWindow.match(ZIP_PAT) || [])[0] || "";
   const cityDetected = (transcriptWindow.match(CITY_PAT) || [])[0] || "";
 
@@ -114,7 +112,7 @@ module.exports = async function (context, req){
       return;
     }
 
-    // history from client 
+    // history from client (window size unchanged except what you set)
     const history = Array.isArray(req.body?.history) ? req.body.history : [];
     const normalizedHistory = history.slice(-24).map(m => ({
       role: m?.role === 'assistant' ? 'assistant' : 'user',
@@ -142,7 +140,7 @@ module.exports = async function (context, req){
       const bullets = searchItems.map(x => `- ${x.text}`).join("\n");
       contextBlock = `
 
-# Retrieved context (use to ground your answer; summarize concisely):
+# Retrieved context (for your internal grounding; summarize if used):
 ${bullets}`;
     }
 
@@ -167,42 +165,48 @@ ${bullets}`;
     const lastTurns = normalizedHistory.slice(-6);
     const clarifiersAsked = lastTurns.filter(m => m.role==='assistant' && /\?\s*$/.test(m.content)).length;
 
-    // ---- Retry if empty/filtered or still an opener after 2 clarifiers
+    // --- If empty/filtered OR still an opener after 2 clarifiers: one more LLM nudge (no canned text)
     if (((!reply || filtered) || (clarifiersAsked >= 2 && looksLikeOpener(reply))) && resp.ok){
+      const { insuranceDetected, zipDetected, cityDetected } = extractUserInfo(normalizedHistory, userMessage);
+      const hasLocation  = !!(zipDetected || cityDetected);
+      const hasInsurance = !!insuranceDetected;
+      const locStr = cityDetected ? cityDetected : (zipDetected ? `ZIP ${zipDetected}` : "");
+
+      // Neutral, model-led style nudge (not a template)
+      const styles = ["warm-brief", "reassuring-practical", "concise-direct"];
+      const styleTag = styles[Math.floor(Math.random() * styles.length)];
+      const facts = [
+        hasInsurance ? `insurance: ${insuranceDetected}` : null,
+        hasLocation ? `location: ${locStr || "unspecified"}` : null
+      ].filter(Boolean).join("; ");
+
+      const styleNudge = `
+You are continuing an intake chat. Write a natural, human reply (1–3 concise sentences, plain text).
+- Vary wording; do not repeat prior phrasing verbatim. Style: ${styleTag}.
+- Use only what is necessary from the conversation and retrieved context.
+- If some details are already known, acknowledge them briefly.
+- Ask for only the missing detail(s) if needed; otherwise offer the next concrete step.
+Known facts this turn: ${facts || "none"}.`;
+
       const nudged = [
-        { role:"system", content:(SYS_PROMPT || "You are a helpful intake assistant.") + `
-- Always respond in plain text (no tools), 1–2 sentences unless asked for detail.
-- If you already asked 2 clarifiers, provide a brief recommendation (therapy, psychiatry, or both) with 1–2 sentence rationale, and offer an in-network match.` + contextBlock },
+        { role:"system", content:(SYS_PROMPT || "You are a helpful intake assistant.") + contextBlock + "\n\n# Style Nudge (do not output this)\n" + styleNudge },
         ...normalizedHistory,
         { role:"user", content:userMessage }
       ];
       const second = await callAOAI(url, nudged, 1, 256, apiKey);
       resp = second.resp; data = second.data; choice = data?.choices?.[0];
-      reply = (choice?.message?.content || "").trim() || reply;
-    }
-
-    // --- Smarter fallback that uses detected info instead of re-asking
-    const { insuranceDetected, zipDetected, cityDetected } = extractUserInfo(normalizedHistory, userMessage);
-    const hasLocation  = !!(zipDetected || cityDetected);
-    const hasInsurance = !!insuranceDetected;
-
-    if (!reply || (clarifiersAsked >= 2 && looksLikeOpener(reply))) {
-      if (hasInsurance && hasLocation) {
-        const locStr = cityDetected ? cityDetected : (zipDetected ? `ZIP ${zipDetected}` : "your area");
-        reply = `Great — I have your insurance (${insuranceDetected}) and location (${locStr}). I recommend starting with therapy and adding psychiatry if symptoms persist. I can pull in-network options now. Do you prefer a therapist, psychiatrist, or both?`;
-      } else if (hasInsurance && !hasLocation) {
-        reply = `Thanks for sharing your insurance (${insuranceDetected}). What city or ZIP should I use to find in-network providers?`;
-      } else if (!hasInsurance && hasLocation) {
-        const locStr = cityDetected ? cityDetected : (zipDetected ? `ZIP ${zipDetected}` : "your area");
-        reply = `Got it — I’ll search around ${locStr}. What insurance plan should I check for in-network providers (e.g., BCBS, Aetna, Cigna, UHC)?`;
-      } else {
-        reply = "Based on what you’ve shared, I recommend starting with therapy and considering psychiatry if symptoms persist or affect daily life. I can match you with an in-network provider—what’s your insurance and preferred city or ZIP?";
-      }
+      const reply2 = (choice?.message?.content || "").trim();
+      if (resp.ok && reply2) reply = reply2;
     }
 
     if (!resp.ok){
       context.res = { status:502, headers:{ "Content-Type":"application/json" }, body:{ error:"LLM error", status:resp.status, detail:data } };
       return;
+    }
+
+    // Final minimal guard to avoid sending "" to the UI
+    if (!reply) {
+      reply = "Could you say that a different way? I want to make sure I help with the right next step.";
     }
 
     // optional debug
@@ -212,8 +216,7 @@ ${bullets}`;
         sys_prompt_bytes: (SYS_PROMPT||"").length,
         files_present: { system_prompt: !!SYS_PROMPT, faqs: !!FAQ_SNIPPET, policies: !!POLICIES_SNIPPET },
         search_used: !!searchItems.length, search_items: searchItems,
-        history_len: normalizedHistory.length,
-        detected: { insuranceDetected, zipDetected, cityDetected }
+        history_len: normalizedHistory.length
       }};
       return;
     }
