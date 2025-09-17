@@ -1,2 +1,20 @@
-- We are not an emergency service. For immediate danger, call 988 or 911.
-- We protect your privacy and only collect the minimum information to match you to care.
+AMS CONNECTS POLICIES
+
+PRIVACY
+- We comply with HIPAA regulations.
+- All sessions are secure telehealth visits.
+
+TELEHEALTH ONLY
+- All visits are remote. No in-person services are offered.
+
+INSURANCE
+- We accept Aetna, BCBS, Cigna, Medicare, Medicaid, and cash pay.
+- Verification is required before first session.
+
+CANCELLATION
+- 24-hour notice required or a cancellation fee may apply.
+
+DISCLAIMER
+- This AI intake guide is for supportive intake only.
+- No medical advice, diagnosis, or prescription will be provided.
+- For emergencies, call 911 or 988 immediately.
