@@ -19,7 +19,7 @@ export default function App() {
     setBusy(true)
 
     try {
-      const history = messages.slice(-8).map(m => ({ role: m.role, content: m.content }))
+      const history = messages.slice(-24).map(m => ({ role: m.role, content: m.content }))
       const res = await fetch('/api/chat?ui=1', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
