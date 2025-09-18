@@ -162,7 +162,7 @@ ${bullets}`;
       }));
 
     // progression checks
-    const lastTurns = normalizedHistory.slice(-6);
+    const lastTurns = normalizedHistory.slice(-24);
     const clarifiersAsked = lastTurns.filter(m => m.role==='assistant' && /\?\s*$/.test(m.content)).length;
 
     // --- If empty/filtered OR still an opener after 2 clarifiers: one more LLM nudge (no canned text)
@@ -203,12 +203,6 @@ Known facts this turn: ${facts || "none"}.`;
       context.res = { status:502, headers:{ "Content-Type":"application/json" }, body:{ error:"LLM error", status:resp.status, detail:data } };
       return;
     }
-
-    // Final minimal guard to avoid sending "" to the UI
-    if (!reply) {
-      reply = "Could you say that a different way? I want to make sure I help with the right next step.";
-    }
-
     // optional debug
     if (req.query?.debug === "1"){
       context.res = { status:200, headers:{ "Content-Type":"application/json" }, body:{
