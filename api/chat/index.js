@@ -193,7 +193,7 @@ Known facts this turn: ${facts || "none"}.`;
         ...normalizedHistory,
         { role:"user", content:userMessage }
       ];
-      const second = await callAOAI(url, nudged, 1, 256, apiKey);
+      const second = await callAOAI(url, nudged, 1, 768, apiKey);
       resp = second.resp; data = second.data; choice = data?.choices?.[0];
       const reply2 = (choice?.message?.content || "").trim();
       if (resp.ok && reply2) reply = reply2;
