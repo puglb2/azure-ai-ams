@@ -286,7 +286,7 @@ ${sections.join("\n\n")}`;
 
     // ---- Choose output token budget (keep reasoning strong on long turns)
     const LONG_HISTORY = (normalizedHistory.length >= 12);
-    const REASONING_FLOOR = LONG_HISTORY ? 2048 : 1024;
+    const REASONING_FLOOR = LONG_HISTORY ? 2048 : 2048;
     const requestedMax = Number.isFinite(req.body?.max_output_tokens) ? req.body.max_output_tokens : 0;
     const maxTokens = Math.max(requestedMax, REASONING_FLOOR);
 
