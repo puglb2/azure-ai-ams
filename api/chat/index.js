@@ -152,7 +152,7 @@ ${bullets}`;
     ];
 
     // ---- First try
-    let { resp, data } = await callAOAI(url, messages, 1, 768, apiKey);
+    let { resp, data } = await callAOAI(url, messages, 1, 1536, apiKey);
     let choice = data?.choices?.[0];
     let reply  = (choice?.message?.content || "").trim();
 
@@ -193,7 +193,7 @@ Known facts this turn: ${facts || "none"}.`;
         ...normalizedHistory,
         { role:"user", content:userMessage }
       ];
-      const second = await callAOAI(url, nudged, 1, 768, apiKey);
+      const second = await callAOAI(url, nudged, 1, 1536, apiKey);
       resp = second.resp; data = second.data; choice = data?.choices?.[0];
       const reply2 = (choice?.message?.content || "").trim();
       if (resp.ok && reply2) reply = reply2;
