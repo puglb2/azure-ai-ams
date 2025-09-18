@@ -2,22 +2,29 @@
 const fs = require("fs");
 const path = require("path");
 
-// ---------- load & cache instruction files ----------
-let SYS_PROMPT = "", FAQ_SNIPPET = "", POLICIES_SNIPPET = "", PROVIDERS_TXT = "", PROVIDER_SCHEDULE_TXT = "";
+// ---------- load & cache instruction + data files ----------
+let SYS_PROMPT = "", FAQ_SNIPPET = "", POLICIES_SNIPPET = "";
+let PROVIDERS_TXT = "", PROVIDER_SCHEDULE_TXT = "";
+let PROVIDERS = [], SLOTS = [];
 
 function readIfExists(p){ try{ return fs.readFileSync(p,"utf8"); } catch{ return ""; } }
+
 function initConfig(){
   if (SYS_PROMPT) return; // only on cold start
-  const cfgDir = path.join(__dirname, "../_config");
+
+  const cfgDir  = path.join(__dirname, "../_config");
   const dataDir = path.join(__dirname, "../_data");
 
+  // Core instruction files
   SYS_PROMPT       = readIfExists(path.join(cfgDir, "system_prompt.txt")).trim();
   FAQ_SNIPPET      = readIfExists(path.join(cfgDir, "faqs.txt")).trim();
   POLICIES_SNIPPET = readIfExists(path.join(cfgDir, "policies.txt")).trim();
 
-  PROVIDERS_TXT        = readIfExists(path.join(dataDir, "providers_100.txt")).trim();
-  PROVIDER_SCHEDULE_TXT = readIfExists(path.join(dataDir, "provider_schedule_14d.txt")).trim();
-  
+  // Provider directory files (raw)
+  PROVIDERS_TXT          = readIfExists(path.join(dataDir, "providers_100.txt")).trim();
+  PROVIDER_SCHEDULE_TXT  = readIfExists(path.join(dataDir, "provider_schedule_14d.txt")).trim();
+
+  // Merge FAQ and Policy snippets into system prompt
   if (FAQ_SNIPPET) {
     SYS_PROMPT += `
 
@@ -39,18 +46,78 @@ ${POLICIES_SNIPPET}`.trim();
 - Offer in-network matching; ask for only the information that is missing (insurance and location).
 - Routine help requests are not crisis; only explicit imminent risk is crisis.
 - Keep responses concise, natural, and varied. Plain text only.`;
+
+  // Parse providers + schedule into structured caches
+  PROVIDERS = parseProviders(PROVIDERS_TXT);
+  SLOTS     = parseSchedule(PROVIDER_SCHEDULE_TXT);
 }
 
-// ---------- AOAI helper ----------
-async function callAOAI(url, messages, temperature, maxTokens, apiKey){
-  const resp = await fetch(url, {
-    method:"POST",
-    headers:{ "Content-Type":"application/json", "api-key": apiKey },
-    body: JSON.stringify({ messages, temperature, max_completion_tokens: maxTokens })
-  });
-  const ct = resp.headers.get("content-type") || "";
-  const data = ct.includes("application/json") ? await resp.json() : { text: await resp.text() };
-  return { resp, data };
+// ---------- provider parsing + matching ----------
+function parseProviders(txt){
+  if (!txt) return [];
+  return txt.trim().split(/\r?\n/).map(line => {
+    // Format: id|Name|Role|ins1,ins2,...|City, ST
+    const [id, name, role, insurersCsv, cityst] = (line||"").split("|");
+    const [city, st] = (cityst||"").split(",").map(s => (s||"").trim());
+    return {
+      id,
+      name,
+      role: (role||"").toLowerCase(), // "therapist" | "psychiatrist"
+      insurers: (insurersCsv||"").split(",").map(s=>s.trim().toLowerCase()).filter(Boolean),
+      city: city || "",
+      state: (st||"").toUpperCase()
+    };
+  }).filter(p => p.id && p.name);
+}
+
+function parseSchedule(txt){
+  if (!txt) return [];
+  return txt.trim().split(/\r?\n/).map(line => {
+    // Format: id|YYYY-MM-DD|HH:MM
+    const [id, date, time] = (line||"").split("|");
+    return { id, date, time };
+  }).filter(s => s.id && s.date && s.time);
+}
+
+function normIns(s){
+  if (!s) return "";
+  const x = s.toLowerCase();
+  if (/(bcbs|blue\s*cross)/i.test(s)) return "bcbs";
+  if (/aetna/i.test(s)) return "aetna";
+  if (/cigna/i.test(s)) return "cigna";
+  if (/(uhc|united)/i.test(s)) return "uhc";
+  if (/medicare/i.test(s)) return "medicare";
+  if (/medicaid|ahcccs/i.test(s)) return "medicaid";
+  return x.replace(/\s+/g,"");
+}
+
+function matchProviders({ state, insurer, role }){
+  const wantRole = (role||"").toLowerCase();   // "therapist" | "psychiatrist" | ""
+  const wantIns  = normIns(insurer);
+  const wantSt   = (state||"").toUpperCase();
+
+  // In-network prioritized
+  let list = PROVIDERS.filter(p =>
+    (!wantRole || p.role === wantRole) &&
+    (!wantSt   || p.state === wantSt) &&
+    (!wantIns  || p.insurers.includes(wantIns))
+  );
+
+  // if none, relax insurer but keep role/state
+  if (!list.length && (wantRole || wantSt)) {
+    list = PROVIDERS.filter(p =>
+      (!wantRole || p.role === wantRole) &&
+      (!wantSt   || p.state === wantSt)
+    );
+  }
+  return list;
+}
+
+function soonestSlotsFor(id, limit=2){
+  return SLOTS
+    .filter(s => s.id === id)
+    .sort((a,b) => (a.date+a.time).localeCompare(b.date+b.time))
+    .slice(0, limit);
 }
 
 // ---------- Azure AI Search (optional grounding) ----------
@@ -87,15 +154,14 @@ async function querySearch(q){
   return items.slice(0,3);
 }
 
-// detect “opener-ish” responses so we can nudge progress
+// ---------- heuristics & extraction ----------
 const looksLikeOpener = (txt) =>
   /can you (share|tell)|what’s been going on|how (has|is) that|can you say more/i.test((txt||""));
 
-// extract user-provided insurance/city/zip from recent messages (for facts, not templating)
 function extractUserInfo(normalizedHistory, userMessage){
   const transcriptWindow = [...normalizedHistory.map(m => m.content), userMessage].join(" ").toLowerCase();
 
-  const INS_PAT = /\b(bcbs|blue\s*cross|bluecross|aetna|cigna|uhc|united\s*healthcare|kaiser|medicare|medicaid|tricare|ambetter)\b/i;
+  const INS_PAT = /\b(bcbs|blue\s*cross|bluecross|aetna|cigna|uhc|united\s*healthcare|kaiser|medicare|medicaid|tricare|ambetter|ahcccs)\b/i;
   const insMatch = transcriptWindow.match(INS_PAT);
   const insuranceDetected = insMatch ? insMatch[1].toUpperCase().replace(/\s+/g," ") : "";
 
@@ -104,9 +170,28 @@ function extractUserInfo(normalizedHistory, userMessage){
   const zipDetected = (transcriptWindow.match(ZIP_PAT) || [])[0] || "";
   const cityDetected = (transcriptWindow.match(CITY_PAT) || [])[0] || "";
 
-  return { insuranceDetected, zipDetected, cityDetected };
+  const STATE_PAT = /\b(arizona|az)\b/i;
+  const stateDetected = STATE_PAT.test(transcriptWindow) ? "AZ" : "";
+
+  // very light intent: user wants provider list?
+  const wantsList = /\b(list|show)\b.+\bproviders?\b|\bproviders?\b.*\b(do you have|what|which)\b|^providers?$/i.test(transcriptWindow);
+
+  return { insuranceDetected, zipDetected, cityDetected, stateDetected, wantsList };
 }
 
+// ---------- AOAI helper ----------
+async function callAOAI(url, messages, temperature, maxTokens, apiKey){
+  const resp = await fetch(url, {
+    method:"POST",
+    headers:{ "Content-Type":"application/json", "api-key": apiKey },
+    body: JSON.stringify({ messages, temperature, max_completion_tokens: maxTokens })
+  });
+  const ct = resp.headers.get("content-type") || "";
+  const data = ct.includes("application/json") ? await resp.json() : { text: await resp.text() };
+  return { resp, data };
+}
+
+// ---------- main handler ----------
 module.exports = async function (context, req){
   try{
     initConfig();
@@ -117,7 +202,7 @@ module.exports = async function (context, req){
       return;
     }
 
-    // history from client (window size unchanged except what you set)
+    // history from client (keep last N turns)
     const history = Array.isArray(req.body?.history) ? req.body.history : [];
     const normalizedHistory = history.slice(-24).map(m => ({
       role: m?.role === 'assistant' ? 'assistant' : 'user',
@@ -135,7 +220,7 @@ module.exports = async function (context, req){
     }
     const url = `${endpoint}/openai/deployments/${deployment}/chat/completions?api-version=${apiVersion}`;
 
-    // ---- Retrieval via Azure AI Search (always-on to improve specificity) ----
+    // ---- Retrieval via Azure AI Search (optional grounding) ----
     let contextBlock = "";
     let searchItems = [];
     const lastUser = (normalizedHistory.slice().reverse().find(m => m.role==='user') || {}).content || "";
@@ -149,17 +234,72 @@ module.exports = async function (context, req){
 ${bullets}`;
     }
 
+    // ---- Provider directory context (deterministic, non-hallucinatory) ----
+    const { insuranceDetected, cityDetected, stateDetected, wantsList } =
+      extractUserInfo(normalizedHistory, userMessage);
+
+    // Prefer state from convo; you can upgrade this if you store state in session
+    const state = stateDetected || "";
+    const insurer = insuranceDetected || "";
+
+    // Heuristic: infer roles user might care about from convo; default to both
+    const wantsPsych = /\bpsych(ology|iatry|iatrist)?\b/i.test(userMessage) || /psychiat/i.test(userMessage) || /both/i.test(userMessage);
+    const wantsTher  = /\btherap(y|ist)\b/i.test(userMessage) || /both/i.test(userMessage);
+    const roles = (wantsPsych && wantsTher) ? ["psychiatrist","therapist"]
+                : wantsPsych ? ["psychiatrist"]
+                : wantsTher  ? ["therapist"]
+                : ["psychiatrist","therapist"];
+
+    let directoryContext = "";
+    if (state || insurer || wantsList) {
+      // collect top matches per role
+      const sections = [];
+      for (const role of roles){
+        const matched = matchProviders({ state, insurer, role }).slice(0, 5);
+        if (matched.length){
+          const lines = matched.map(p => {
+            const slots = soonestSlotsFor(p.id).map(s => `${s.date} ${s.time}`).join(", ");
+            return `- ${p.name} (${p.role}), ${p.city}, ${p.state}; insurers: ${p.insurers.join(", ")}${slots ? `; soonest: ${slots}` : ""}`;
+          }).join("\n");
+          const title = role === "therapist" ? "Therapists" : "Psychiatrists";
+          sections.push(`${title} (in-network prioritized):\n${lines}`);
+        }
+      }
+      if (sections.length){
+        directoryContext = `
+
+# Provider Directory (use only entries listed here; do not invent)
+${sections.join("\n\n")}`;
+      }
+    }
+
     // ---- Build messages
     const messages = [
-      { role:"system", content:(SYS_PROMPT || "You are a helpful intake assistant.") + contextBlock },
+      { role:"system", content:
+          (SYS_PROMPT || "You are a helpful intake assistant.") +
+          (directoryContext ? "\n\n"+directoryContext : "") +
+          contextBlock
+      },
       ...normalizedHistory,
       { role:"user", content:userMessage }
     ];
 
-    // ---- First try
-    let { resp, data } = await callAOAI(url, messages, 1, 1536, apiKey);
-    let choice = data?.choices?.[0];
+    // ---- Choose output token budget (keep reasoning strong on long turns)
+    const LONG_HISTORY = (normalizedHistory.length >= 12);
+    const REASONING_FLOOR = LONG_HISTORY ? 2048 : 1024;
+    const requestedMax = Number.isFinite(req.body?.max_output_tokens) ? req.body.max_output_tokens : 0;
+    const maxTokens = Math.max(requestedMax, REASONING_FLOOR);
+
+    // ---- First call
+    let { resp, data } = await callAOAI(url, messages, 1, maxTokens, apiKey);
+    const safeChoice = (d) => d && Array.isArray(d.choices) ? d.choices[0] : undefined;
+    let choice = safeChoice(data);
     let reply  = (choice?.message?.content || "").trim();
+
+    // Never show a blank if we hit the cap
+    if (choice?.finish_reason === "length") {
+      reply = reply ? (reply + " …") : "(I hit a token limit — continue?)";
+    }
 
     const filtered = choice?.finish_reason === "content_filter" ||
       (Array.isArray(data?.prompt_filter_results) && data.prompt_filter_results.some(r => {
@@ -170,51 +310,66 @@ ${bullets}`;
     const lastTurns = normalizedHistory.slice(-24);
     const clarifiersAsked = lastTurns.filter(m => m.role==='assistant' && /\?\s*$/.test(m.content)).length;
 
-    // --- If empty/filtered OR still an opener after 2 clarifiers: one more LLM nudge (no canned text)
+    // --- If empty/filtered OR still an opener after 2 clarifiers: one more model-led nudge
     if (((!reply || filtered) || (clarifiersAsked >= 2 && looksLikeOpener(reply))) && resp.ok){
-      const { insuranceDetected, zipDetected, cityDetected } = extractUserInfo(normalizedHistory, userMessage);
-      const hasLocation  = !!(zipDetected || cityDetected);
-      const hasInsurance = !!insuranceDetected;
-      const locStr = cityDetected ? cityDetected : (zipDetected ? `ZIP ${zipDetected}` : "");
-
-      // Neutral, model-led style nudge (not a template)
       const styles = ["warm-brief", "reassuring-practical", "concise-direct"];
       const styleTag = styles[Math.floor(Math.random() * styles.length)];
       const facts = [
-        hasInsurance ? `insurance: ${insuranceDetected}` : null,
-        hasLocation ? `location: ${locStr || "unspecified"}` : null
+        insurer ? `insurance: ${insurer}` : null,
+        state   ? `state: ${state}`       : null
       ].filter(Boolean).join("; ");
 
       const styleNudge = `
 You are continuing an intake chat. Write a natural, human reply (1–3 concise sentences, plain text).
 - Vary wording; do not repeat prior phrasing verbatim. Style: ${styleTag}.
 - Use only what is necessary from the conversation and retrieved context.
-- If some details are already known, acknowledge them briefly.
 - Ask for only the missing detail(s) if needed; otherwise offer the next concrete step.
 Known facts this turn: ${facts || "none"}.`;
 
       const nudged = [
-        { role:"system", content:(SYS_PROMPT || "You are a helpful intake assistant.") + contextBlock + "\n\n# Style Nudge (do not output this)\n" + styleNudge },
+        { role:"system", content:(SYS_PROMPT || "You are a helpful intake assistant.") +
+          (directoryContext ? "\n\n"+directoryContext : "") + contextBlock +
+          "\n\n# Style Nudge (do not output this)\n" + styleNudge },
         ...normalizedHistory,
         { role:"user", content:userMessage }
       ];
-      const second = await callAOAI(url, nudged, 1, 1536, apiKey);
-      resp = second.resp; data = second.data; choice = data?.choices?.[0];
-      const reply2 = (choice?.message?.content || "").trim();
-      if (resp.ok && reply2) reply = reply2;
+      const second = await callAOAI(url, nudged, 1, maxTokens, apiKey);
+      if (second.resp.ok){
+        data = second.data;
+        choice = safeChoice(data);
+        const reply2 = (choice?.message?.content || "").trim();
+        if (reply2) reply = reply2;
+        if (choice?.finish_reason === "length" && (!reply || reply.length < 80)) {
+          reply = reply ? (reply + " …") : "(I hit a token limit — continue?)";
+        }
+      } else {
+        // graceful fallback instead of 500
+        reply ||= "(I’m having trouble reaching the model right now. Want me to try again?)";
+      }
     }
 
     if (!resp.ok){
       context.res = { status:502, headers:{ "Content-Type":"application/json" }, body:{ error:"LLM error", status:resp.status, detail:data } };
       return;
     }
+
     // optional debug
     if (req.query?.debug === "1"){
       context.res = { status:200, headers:{ "Content-Type":"application/json" }, body:{
-        reply, finish_reason: choice?.finish_reason, usage: data?.usage,
+        reply,
+        finish_reason: choice?.finish_reason,
+        usage: data?.usage,
         sys_prompt_bytes: (SYS_PROMPT||"").length,
-        files_present: { system_prompt: !!SYS_PROMPT, faqs: !!FAQ_SNIPPET, policies: !!POLICIES_SNIPPET },
-        search_used: !!searchItems.length, search_items: searchItems,
+        files_present: {
+          system_prompt: !!SYS_PROMPT,
+          faqs: !!FAQ_SNIPPET,
+          policies: !!POLICIES_SNIPPET,
+          providers_txt: !!PROVIDERS_TXT,
+          provider_schedule_txt: !!PROVIDER_SCHEDULE_TXT
+        },
+        provider_counts: { providers: PROVIDERS.length, slots: SLOTS.length },
+        search_used: !!searchItems.length,
+        search_items: searchItems,
         history_len: normalizedHistory.length
       }};
       return;
@@ -222,6 +377,7 @@ Known facts this turn: ${facts || "none"}.`;
 
     context.res = { status:200, headers:{ "Content-Type":"application/json" }, body:{ reply } };
   } catch(e){
+    // Keep it JSON (avoid HTML/hex 500)
     context.res = { status:500, headers:{ "Content-Type":"application/json" }, body:{ error:"server error", detail:String(e) } };
   }
 };
