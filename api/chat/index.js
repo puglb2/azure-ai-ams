@@ -3,16 +3,21 @@ const fs = require("fs");
 const path = require("path");
 
 // ---------- load & cache instruction files ----------
-let SYS_PROMPT = "", FAQ_SNIPPET = "", POLICIES_SNIPPET = "";
+let SYS_PROMPT = "", FAQ_SNIPPET = "", POLICIES_SNIPPET = "", PROVIDERS_TXT = "", PROVIDER_SCHEDULE_TXT = "";
 
 function readIfExists(p){ try{ return fs.readFileSync(p,"utf8"); } catch{ return ""; } }
 function initConfig(){
   if (SYS_PROMPT) return; // only on cold start
   const cfgDir = path.join(__dirname, "../_config");
+  const dataDir = path.join(__dirname, "../_data");
+
   SYS_PROMPT       = readIfExists(path.join(cfgDir, "system_prompt.txt")).trim();
   FAQ_SNIPPET      = readIfExists(path.join(cfgDir, "faqs.txt")).trim();
   POLICIES_SNIPPET = readIfExists(path.join(cfgDir, "policies.txt")).trim();
 
+  PROVIDERS_TXT        = readIfExists(path.join(dataDir, "providers_100.txt")).trim();
+  PROVIDER_SCHEDULE_TXT = readIfExists(path.join(dataDir, "provider_schedule_14d.txt")).trim();
+  
   if (FAQ_SNIPPET) {
     SYS_PROMPT += `
 
