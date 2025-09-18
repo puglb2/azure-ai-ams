@@ -152,7 +152,7 @@ ${bullets}`;
     ];
 
     // ---- First try
-    let { resp, data } = await callAOAI(url, messages, 1, 384, apiKey);
+    let { resp, data } = await callAOAI(url, messages, 1, 768, apiKey);
     let choice = data?.choices?.[0];
     let reply  = (choice?.message?.content || "").trim();
 
