@@ -7,11 +7,10 @@ on:
     types: [ opened, synchronize, reopened, closed ]
     branches: [ main ]
 
-# EDIT THESE if your app/api are in subfolders
 env:
-  APP_LOCATION: "."        # folder with index.html (+ package.json if building)
-  API_LOCATION: "api"      # "" if you have no Azure Functions
-  OUTPUT_LOCATION: "dist"  # Vite build output (or we'll create it for static)
+  APP_LOCATION: "."        # repo root (where your package.json lives)
+  API_LOCATION: "api"      # "" if you have NO Azure Functions
+  OUTPUT_LOCATION: "dist"  # Vite build output folder
 
 jobs:
   build_and_deploy_job:
@@ -26,12 +25,12 @@ jobs:
       - name: Debug layout
         run: |
           echo "=== repo root ==="; ls -la
-          echo "=== app location ($APP_LOCATION) ==="; ls -la "$APP_LOCATION" || true
-          echo "=== api location ($API_LOCATION) ==="; ls -la "$API_LOCATION" || true
-          echo "=== package.json (if any) ==="; sed -n '1,120p' "$APP_LOCATION/package.json" || true
-          echo "=== index.html (if any) ==="; sed -n '1,120p' "$APP_LOCATION/index.html" || true
+          echo "=== app ($APP_LOCATION) ==="; ls -la "$APP_LOCATION" || true
+          echo "=== api ($API_LOCATION) ==="; ls -la "$API_LOCATION" || true
+          echo "=== package.json ==="; sed -n '1,120p' "$APP_LOCATION/package.json" || true
+          echo "=== index.html ==="; sed -n '1,120p' "$APP_LOCATION/index.html" || true
 
-      # Build the app if it's a Node project; otherwise prepare a static artifact.
+      # Build the frontend ourselves. If no package.json, treat as static and copy to dist.
       - name: Build app or prepare static artifact
         working-directory: ${{ env.APP_LOCATION }}
         shell: bash
@@ -39,50 +38,52 @@ jobs:
           set -e
           if [ -f package.json ]; then
             echo "package.json found in $PWD"
-            # Detect a build script using Node (avoid jq dependency)
-            node -e "const p=require('./package.json'); if(!(p.scripts&&p.scripts.build)){process.exit(2)}" \
+            node -e "const p=require('./package.json'); if(!(p.scripts&&p.scripts.build)) process.exit(2)" \
               && HAS_BUILD=1 || HAS_BUILD=0
             if [ $HAS_BUILD -eq 1 ]; then
-              if [ -f package-lock.json ]; then
-                echo "Using npm ci (lockfile present)"; npm ci
-              else
-                echo "Using npm install (no lockfile yet)"; npm install
-              fi
-              echo "Running build"; npm run build
+              if [ -f package-lock.json ]; then npm ci; else npm install; fi
+              npm run build
             else
-              echo "No 'build' script; treating as static site"
+              echo "No build script; packaging as static site"
               mkdir -p "${{ env.OUTPUT_LOCATION }}"
               rsync -a --exclude "${{ env.OUTPUT_LOCATION }}" ./ "${{ env.OUTPUT_LOCATION }}/"
             fi
           else
-            echo "No package.json; treating as static site"
+            echo "No package.json; packaging as static site"
             mkdir -p "${{ env.OUTPUT_LOCATION }}"
             rsync -a --exclude "${{ env.OUTPUT_LOCATION }}" ./ "${{ env.OUTPUT_LOCATION }}/"
           fi
-          echo "=== artifact (${OUTPUT_LOCATION}) ==="
-          ls -la "${{ env.OUTPUT_LOCATION }}" || (echo "No output at ${{ env.OUTPUT_LOCATION }}"; exit 1)
+          echo "=== artifact ($OUTPUT_LOCATION) ==="
+          ls -la "${{ env.OUTPUT_LOCATION }}"
 
-      # Fail early on pushes to main if there is no token
+      # (Optional) quick sanity for Functions layout (won't fail the build)
+      - name: Check Functions layout
+        run: |
+          if [ -n "${{ env.API_LOCATION }}" ] && [ -d "${{ env.API_LOCATION }}" ]; then
+            echo "host.json:"; sed -n '1,120p' "${{ env.API_LOCATION }}/host.json" || echo "no host.json"
+            echo "Functions folders:"; find "${{ env.API_LOCATION }}" -maxdepth 2 -name function.json -print || true
+          fi
+
+      # Fail early if token missing on push
       - name: Ensure deployment token exists (push only)
         if: ${{ github.event_name == 'push' }}
         env:
           TOKEN: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
         run: |
           if [ -z "$TOKEN" ]; then
-            echo "ERROR: Missing secret AZURE_STATIC_WEB_APPS_API_TOKEN"
-            exit 1
+            echo "ERROR: Missing secret AZURE_STATIC_WEB_APPS_API_TOKEN"; exit 1
           fi
 
-      # Deploy: skip SWA's internal build (avoids Oryx detection)
+      # Deploy: skip BOTH app and API builds (no Oryx). Just upload what we prepared.
       - name: Deploy to Azure Static Web Apps
         uses: Azure/static-web-apps-deploy@v1
         env:
           TOKEN: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
-        if: ${{ github.event_name != 'pull_request' || env.TOKEN != '' }}
         with:
           azure_static_web_apps_api_token: ${{ env.TOKEN }}
           action: upload
           app_location: ${{ env.APP_LOCATION }}
-          api_location: ${{ env.API_LOCATION }}
           app_artifact_location: ${{ env.OUTPUT_LOCATION }}
+          api_location: ${{ env.API_LOCATION }}
           skip_app_build: true
+          skip_api_build: true
