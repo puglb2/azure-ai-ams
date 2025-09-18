@@ -7,66 +7,36 @@ on:
     types: [ opened, synchronize, reopened, closed ]
     branches: [ main ]
 
+# Set these to where your app & api live
 env:
-  APP_LOCATION: "."        # where your package.json / index.html live
-  API_LOCATION: "api"      # set to "" if you don't need Functions
-  OUTPUT_LOCATION: "dist"  # Vite build output
+  APP_LOCATION: "/"       # "/" = repo root. If your frontend is in web/, set "web"
+  API_LOCATION: "api"     # "" if you have no Functions
+  OUTPUT_LOCATION: "dist" # Vite build output folder
 
 jobs:
   build_and_deploy_job:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          persist-credentials: false
 
+      # (Optional) show the structure the action will use
       - name: Debug layout
         run: |
-          echo "=== repo root ==="; ls -la
-          echo "=== app ($APP_LOCATION) ==="; ls -la "$APP_LOCATION" || true
-          echo "=== api ($API_LOCATION) ==="; ls -la "$API_LOCATION" || true
-          echo "=== package.json ==="; sed -n '1,120p' "$APP_LOCATION/package.json" || true
-          echo "=== index.html ==="; sed -n '1,120p' "$APP_LOCATION/index.html" || true
-          if [ -n "${{ env.API_LOCATION }}" ] && [ -d "${{ env.API_LOCATION }}" ]; then
-            echo "=== host.json ==="; sed -n '1,120p' "${{ env.API_LOCATION }}/host.json" || true
-            echo "=== functions ==="; find "${{ env.API_LOCATION }}" -maxdepth 2 -name function.json -print || true
-          fi
+          echo "=== app ($APP_LOCATION) ==="; ls -la "${{ env.APP_LOCATION }}" || true
+          echo "=== api ($API_LOCATION) ==="; ls -la "${{ env.API_LOCATION }}" || true
+          echo "=== package.json ==="; sed -n '1,120p' "${{ env.APP_LOCATION }}/package.json" || true
+          echo "=== host.json ==="; sed -n '1,120p' "${{ env.API_LOCATION }}/host.json" || true
+          echo "=== function.json files ==="; find "${{ env.API_LOCATION }}" -name function.json -print || true
 
-      - name: Build app or prepare static artifact
-        working-directory: ${{ env.APP_LOCATION }}
-        shell: bash
-        run: |
-          set -e
-          if [ -f package.json ]; then
-            if [ -f package-lock.json ]; then npm ci; else npm install; fi
-            npm run build
-          else
-            echo "No package.json; packaging as static site"
-            mkdir -p "${{ env.OUTPUT_LOCATION }}"
-            rsync -a --exclude "${{ env.OUTPUT_LOCATION }}" ./ "${{ env.OUTPUT_LOCATION }}/"
-          fi
-          echo "=== artifact ($OUTPUT_LOCATION) ==="
-          ls -la "${{ env.OUTPUT_LOCATION }}"
-
-      - name: Ensure deployment token exists (push only)
-        if: ${{ github.event_name == 'push' }}
-        env:
-          TOKEN: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
-        run: |
-          if [ -z "$TOKEN" ]; then
-            echo "ERROR: Missing secret AZURE_STATIC_WEB_APPS_API_TOKEN"; exit 1
-          fi
-
-      - name: Deploy to Azure Static Web Apps
+      - name: Build & Deploy (Oryx)
         uses: Azure/static-web-apps-deploy@v1
-        env:
-          TOKEN: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
         with:
-          azure_static_web_apps_api_token: ${{ env.TOKEN }}
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
           action: upload
-          app_location: ${{ env.APP_LOCATION }}
-          app_artifact_location: ${{ env.OUTPUT_LOCATION }}
-          api_location: ${{ env.API_LOCATION }}   # set "" if you have no Functions
-
+          app_location: ${{ env.APP_LOCATION }}         # folder containing package.json + index.html
+          output_location: ${{ env.OUTPUT_LOCATION }}   # Oryx will build to dist; this is what gets uploaded
+          api_location: ${{ env.API_LOCATION }}         # folder with host.json and functions
+          # Optional: you can force the build command if you want
+          app_build_command: "npm install && npm run build"
+          # Leave skip_* flags out so Oryx handles detection/build
