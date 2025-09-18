@@ -1,23 +1,37 @@
 {
-  "name": "ams-intake-widget",
+  "name": "ams-intake-assistant",
+  "version": "1.0.0",
   "private": true,
-  "version": "0.1.0",
+  "description": "AMS Intake Assistant - React + Vite app for mental health intake and provider matching",
+  "author": "Your Team <you@example.com>",
+  "license": "MIT",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "lint": "eslint src --ext .ts,.tsx",
+    "format": "prettier --write .",
+    "test": "vitest run"
   },
   "dependencies": {
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },
   "devDependencies": {
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.3",
     "@vitejs/plugin-react": "^4.3.3",
+    "eslint": "^8.57.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-react": "^7.34.0",
+    "prettier": "^3.3.3",
     "typescript": "^5.6.3",
-    "vite": "^5.4.10"
+    "vite": "^5.4.10",
+    "vitest": "^1.6.0"
   },
   "engines": {
-    "node": ">=18 <21"
+    "node": ">=18 <21",
+    "npm": ">=8"
   }
 }
