@@ -4,7 +4,7 @@ on:
   pull_request: { types: [opened, synchronize, reopened, closed], branches: [ main ] }
 
 env:
-  APP_LOCATION: "src"      # "/" for repo root; or "web" if your frontend is in ./web
+  APP_LOCATION: "/"      # "/" for repo root; or "web" if your frontend is in ./web
   API_LOCATION: "api"    # "" if you don't have Functions
   OUTPUT_LOCATION: "dist"
 
