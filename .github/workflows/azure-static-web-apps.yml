@@ -9,7 +9,7 @@ on:
 
 # EDIT THESE if your app/api are in subfolders
 env:
-  APP_LOCATION: "/"        # folder with index.html (+ package.json if building)
+  APP_LOCATION: "."        # folder with index.html (+ package.json if building)
   API_LOCATION: "api"      # "" if you have no Azure Functions
   OUTPUT_LOCATION: "dist"  # Vite build output (or we'll create it for static)
 
