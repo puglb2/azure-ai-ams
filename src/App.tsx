@@ -28,8 +28,7 @@ export default function App() {
       const data = await res.json().catch(() => ({} as any))
       const raw = typeof data?.reply === 'string' ? data.reply.trim() : ''
       const err = typeof data?.error === 'string' ? data.error.trim() : ''
-      const reply = raw || (err ? `Sorry — ${err}` :
-        "I can help you decide between therapy, psychiatry, or both and match you with an in-network provider. What’s your insurance and location?")
+      const reply = raw || (err ? `Sorry — ${err}` : "")
       setMessages(m => [...m, { role: 'assistant', content: reply }])
     } catch {
       setMessages(m => [...m, { role: 'assistant', content: 'Sorry, something went wrong.' }])
