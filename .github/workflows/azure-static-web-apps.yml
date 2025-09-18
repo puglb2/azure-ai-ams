@@ -69,5 +69,4 @@ jobs:
           app_location: ${{ env.APP_LOCATION }}
           app_artifact_location: ${{ env.OUTPUT_LOCATION }}
           api_location: ${{ env.API_LOCATION }}   # set "" if you have no Functions
-          skip_app_build: true
-          skip_api_build: true
+
