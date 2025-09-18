@@ -8,9 +8,9 @@ on:
     branches: [ main ]
 
 env:
-  APP_LOCATION: "."        # repo root (where your package.json lives)
-  API_LOCATION: "api"      # "" if you have NO Azure Functions
-  OUTPUT_LOCATION: "dist"  # Vite build output folder
+  APP_LOCATION: "."        # where your package.json / index.html live
+  API_LOCATION: "api"      # set to "" if you don't need Functions
+  OUTPUT_LOCATION: "dist"  # Vite build output
 
 jobs:
   build_and_deploy_job:
@@ -29,25 +29,19 @@ jobs:
           echo "=== api ($API_LOCATION) ==="; ls -la "$API_LOCATION" || true
           echo "=== package.json ==="; sed -n '1,120p' "$APP_LOCATION/package.json" || true
           echo "=== index.html ==="; sed -n '1,120p' "$APP_LOCATION/index.html" || true
+          if [ -n "${{ env.API_LOCATION }}" ] && [ -d "${{ env.API_LOCATION }}" ]; then
+            echo "=== host.json ==="; sed -n '1,120p' "${{ env.API_LOCATION }}/host.json" || true
+            echo "=== functions ==="; find "${{ env.API_LOCATION }}" -maxdepth 2 -name function.json -print || true
+          fi
 
-      # Build the frontend ourselves. If no package.json, treat as static and copy to dist.
       - name: Build app or prepare static artifact
         working-directory: ${{ env.APP_LOCATION }}
         shell: bash
         run: |
           set -e
           if [ -f package.json ]; then
-            echo "package.json found in $PWD"
-            node -e "const p=require('./package.json'); if(!(p.scripts&&p.scripts.build)) process.exit(2)" \
-              && HAS_BUILD=1 || HAS_BUILD=0
-            if [ $HAS_BUILD -eq 1 ]; then
-              if [ -f package-lock.json ]; then npm ci; else npm install; fi
-              npm run build
-            else
-              echo "No build script; packaging as static site"
-              mkdir -p "${{ env.OUTPUT_LOCATION }}"
-              rsync -a --exclude "${{ env.OUTPUT_LOCATION }}" ./ "${{ env.OUTPUT_LOCATION }}/"
-            fi
+            if [ -f package-lock.json ]; then npm ci; else npm install; fi
+            npm run build
           else
             echo "No package.json; packaging as static site"
             mkdir -p "${{ env.OUTPUT_LOCATION }}"
@@ -56,15 +50,6 @@ jobs:
           echo "=== artifact ($OUTPUT_LOCATION) ==="
           ls -la "${{ env.OUTPUT_LOCATION }}"
 
-      # (Optional) quick sanity for Functions layout (won't fail the build)
-      - name: Check Functions layout
-        run: |
-          if [ -n "${{ env.API_LOCATION }}" ] && [ -d "${{ env.API_LOCATION }}" ]; then
-            echo "host.json:"; sed -n '1,120p' "${{ env.API_LOCATION }}/host.json" || echo "no host.json"
-            echo "Functions folders:"; find "${{ env.API_LOCATION }}" -maxdepth 2 -name function.json -print || true
-          fi
-
-      # Fail early if token missing on push
       - name: Ensure deployment token exists (push only)
         if: ${{ github.event_name == 'push' }}
         env:
@@ -74,7 +59,6 @@ jobs:
             echo "ERROR: Missing secret AZURE_STATIC_WEB_APPS_API_TOKEN"; exit 1
           fi
 
-      # Deploy: skip BOTH app and API builds (no Oryx). Just upload what we prepared.
       - name: Deploy to Azure Static Web Apps
         uses: Azure/static-web-apps-deploy@v1
         env:
@@ -84,6 +68,6 @@ jobs:
           action: upload
           app_location: ${{ env.APP_LOCATION }}
           app_artifact_location: ${{ env.OUTPUT_LOCATION }}
-          api_location: ${{ env.API_LOCATION }}
+          api_location: ${{ env.API_LOCATION }}   # set "" if you have no Functions
           skip_app_build: true
           skip_api_build: true
