@@ -251,6 +251,26 @@ async function querySearch(q){
 }
 
 // ---------------------------- Heuristics & extraction ----------------------------
+
+// Robust state detection that avoids matching the conjunction "or"
+function detectState(rawTranscript, lowTranscript){
+  // spelled-out names (safe on lowercase)
+  const spelled = [
+    ["arizona","AZ"], ["new mexico","NM"], ["colorado","CO"],
+    ["nevada","NV"], ["oregon","OR"], ["new york","NY"]
+  ];
+  for (const [name, code] of spelled){
+    const re = new RegExp(`\\b${name}\\b`, "i"); // on lowercase text
+    if (re.test(lowTranscript)) return { code, confidence: "high" };
+  }
+
+  // ALL-CAPS postal codes only from RAW (to avoid matching "or")
+  const m = rawTranscript.match(/\b(AZ|NM|CO|NV|OR|NY)\b/);
+  if (m) return { code: m[1], confidence: "high" };
+
+  return { code: "", confidence: "low" };
+}
+
 const looksLikeOpener = (txt) =>
   /can you (share|tell)|what’s been going on|how (has|is) that|can you say more/i.test((txt||""));
 
@@ -335,21 +355,24 @@ ${bullets}`;
     } catch { /* optional */ }
 
     // Facts from convo
-    const { insuranceDetected, stateDetected, wantsList, wantsPsych, wantsTher } =
-      extractUserInfo(normalizedHistory, userMessage);
+const {
+  insuranceDetected, stateDetected, stateConfidence, wantsList, wantsPsych, wantsTher
+} = extractUserInfo(normalizedHistory, userMessage);
 
-    const state   = stateDetected || "";
-    const insurer = insuranceDetected || "";
+const state   = stateDetected || "";
+const insurer = insuranceDetected || "";
 
-    // ---------- Deterministic provider listing branch ----------
-    const directoryLoaded = PROVIDERS.length > 0;
-    const listFlag = wantsList || req.query?.list === "1";
-    const roles = (wantsPsych && wantsTher) ? ["psychiatrist","therapist"]
-                : wantsPsych ? ["psychiatrist"]
-                : wantsTher  ? ["therapist"]
-                : []; // unknown yet
+const directoryLoaded = PROVIDERS.length > 0;
 
-    const enoughToList = !!state && roles.length > 0;
+// Only fire deterministic list when explicitly asked OR we have confident state + role
+const explicitList = wantsList || /options?/i.test(userMessage);
+const roles = (wantsPsych && wantsTher) ? ["psychiatrist","therapist"]
+            : wantsPsych ? ["psychiatrist"]
+            : wantsTher  ? ["therapist"]
+            : [];
+
+const enoughToList = (state && stateConfidence === "high" && roles.length > 0);
+const listFlag = (explicitList || enoughToList);
 
     if ((listFlag || enoughToList) && directoryLoaded){
       const chosenRoles = roles.length ? roles : ["psychiatrist","therapist"];
