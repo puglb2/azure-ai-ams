@@ -11,7 +11,7 @@ let DEBUG_PATHS = { provPath: "", provExists: false, slotPath: "", slotExists: f
 function readIfExists(p){ try{ return fs.readFileSync(p,"utf8"); } catch{ return ""; } }
 function exists(p){ try{ return fs.existsSync(p); } catch { return false; } }
 
-// Resolve data dir for both common deploy layouts:
+// Resolve data dir for common deploy layouts:
 //   A) /home/site/wwwroot/api/_data
 //   B) /home/site/wwwroot/_data
 function resolveDataPath(){
@@ -19,8 +19,7 @@ function resolveDataPath(){
   const fromRoot = path.join(__dirname, "../../_data");
   if (exists(fromApi)) return fromApi;
   if (exists(fromRoot)) return fromRoot;
-  // fallback to api-relative (it may still hold the files)
-  return fromApi;
+  return fromApi; // fallback
 }
 
 function initConfig(){
@@ -77,7 +76,7 @@ ${POLICIES_SNIPPET}`.trim();
 }
 
 // ---------------------------- Provider utilities ----------------------------
-// Your providers_100.txt format is block-based, e.g.:
+// providers_100.txt is block-based, e.g.:
 //
 // prov_001<TAB>Allison Hill (PsyD) — Therapy
 //   Styles: CBT-focused
@@ -90,7 +89,7 @@ ${POLICIES_SNIPPET}`.trim();
 function parseProviders(txt){
   if (!txt) return [];
 
-  // Split into blocks separated by blank lines
+  // Split into blocks by blank lines
   const lines = txt.split(/\r?\n/);
   const blocks = [];
   let cur = [];
@@ -113,14 +112,23 @@ function parseProviders(txt){
 
     const id = m[1].trim();
     const title = m[2].trim(); // e.g., "Allison Hill (PsyD) — Therapy"
+    const titleLC = title.toLowerCase();
 
-    // Infer role
-    let role = "";
-    if (/psychiat/i.test(title)) role = "psychiatrist";
-    else if (/therap/i.test(title)) role = "therapist";
-
-    // Extract name (left of the em dash)
+    // Extract name (left of the em dash) — keep creds like (PsyD) if present
     const namePart = title.split(/—/)[0].trim();
+
+    // Infer role from title + credentials
+    let role = "";
+    if (/\bpsychiat/i.test(titleLC)) role = "psychiatrist";
+    else if (/\btherap/i.test(titleLC)) role = "therapist";
+
+    // Heuristics for prescribers that don't say "Psychiatry" explicitly
+    const isPrescriberCred = /\b(md|do|pmhnp|np|npp|arnp|aprn)\b/i.test(title);
+    const saysTherapyOnly = /—\s*therapy\b/i.test(titleLC);
+    if (!role) {
+      if (isPrescriberCred && !saysTherapyOnly) role = "psychiatrist";
+    }
+    if (!role) role = "therapist"; // default fallback
 
     // Helper to read "Key: value" lines (case-insensitive)
     const getVal = (label) => {
@@ -162,7 +170,7 @@ function parseProviders(txt){
   return out;
 }
 
-// Schedule still line-based: id|YYYY-MM-DD|HH:MM
+// Schedule is line-based: id|YYYY-MM-DD|HH:MM
 function parseSchedule(txt){
   if (!txt) return [];
   return txt.trim().split(/\r?\n/).map(line => {
@@ -181,6 +189,7 @@ function normIns(s){
   if (/medicare/.test(x)) return "medicare";
   if (/medicaid|ahcccs/.test(x)) return "medicaid";
   if (/humana/.test(x)) return "humana";
+  if (/cash\s*pay|cashpay|self[-\s]*pay/.test(x)) return "cashpay";
   return x.replace(/\s+/g,"");
 }
 
@@ -260,14 +269,12 @@ function detectState(rawTranscript, lowTranscript){
     ["nevada","NV"], ["oregon","OR"], ["new york","NY"]
   ];
   for (const [name, code] of spelled){
-    const re = new RegExp(`\\b${name}\\b`, "i"); // on lowercase text
+    const re = new RegExp(`\\b${name}\\b`, "i");
     if (re.test(lowTranscript)) return { code, confidence: "high" };
   }
-
   // ALL-CAPS postal codes only from RAW (to avoid matching "or")
   const m = rawTranscript.match(/\b(AZ|NM|CO|NV|OR|NY)\b/);
   if (m) return { code: m[1], confidence: "high" };
-
   return { code: "", confidence: "low" };
 }
 
@@ -275,26 +282,30 @@ const looksLikeOpener = (txt) =>
   /can you (share|tell)|what’s been going on|how (has|is) that|can you say more/i.test((txt||""));
 
 function extractUserInfo(normalizedHistory, userMessage){
-  const transcriptWindow = [...normalizedHistory.map(m => m.content), userMessage].join(" ").toLowerCase();
+  const rawTranscript = [...normalizedHistory.map(m => m.content), userMessage].join(" ");
+  const lowTranscript = rawTranscript.toLowerCase();
 
-  const INS_PAT = /\b(bcbs|blue\s*cross|bluecross|aetna|cigna|uhc|united\s*healthcare|kaiser|medicare|medicaid|tricare|ambetter|ahcccs|humana)\b/i;
-  const insMatch = transcriptWindow.match(INS_PAT);
+  const INS_PAT = /\b(bcbs|blue\s*cross|bluecross|aetna|cigna|uhc|united\s*healthcare|kaiser|medicare|medicaid|tricare|ambetter|ahcccs|humana|cash\s*pay|cashpay|self[-\s]*pay)\b/i;
+  const insMatch = lowTranscript.match(INS_PAT);
   const insuranceDetected = insMatch ? insMatch[1].toUpperCase().replace(/\s+/g," ") : "";
 
-  const STATE_PAT = /\b(arizona|az|new mexico|nm|colorado|co|nevada|nv|oregon|or|new york|ny)\b/i;
-  let stateDetected = "";
-  const m = transcriptWindow.match(STATE_PAT);
-  if (m) {
-    const raw = m[0].toLowerCase();
-    const map = { "arizona":"AZ","az":"AZ","new mexico":"NM","nm":"NM","colorado":"CO","co":"CO","nevada":"NV","nv":"NV","oregon":"OR","or":"OR","new york":"NY","ny":"NY" };
-    stateDetected = map[raw] || "";
-  }
+  const { code: stateDetected, confidence: stateConfidence } = detectState(rawTranscript, lowTranscript);
 
-  const wantsList = /\b(list|show)\b.+\bproviders?\b|\bproviders?\b.*\b(do you have|what|which)\b|^providers?$/i.test(transcriptWindow);
-  const wantsPsych = /\bpsychiat(ry|rist)?\b/i.test(transcriptWindow) || /\bmeds?|medication\b/i.test(transcriptWindow) || /\bboth\b/i.test(transcriptWindow);
-  const wantsTher  = /\btherap(y|ist)\b/i.test(transcriptWindow) || /\bboth\b/i.test(transcriptWindow);
+  const wantsList =
+    /\b(list|show|options?)\b.+\bproviders?\b/i.test(lowTranscript) ||
+    /\bproviders?\b.*\b(list|show|options?)\b/i.test(lowTranscript) ||
+    /^providers?$/i.test(rawTranscript.trim());
 
-  return { insuranceDetected, stateDetected, wantsList, wantsPsych, wantsTher };
+  const wantsPsych =
+    /\bpsychiat(ry|rist)?\b/i.test(lowTranscript) ||
+    /\bmeds?\b|\bmedication\b/i.test(lowTranscript) ||
+    /\bboth\b/i.test(lowTranscript);
+
+  const wantsTher  =
+    /\btherap(y|ist)\b/i.test(lowTranscript) ||
+    /\bboth\b/i.test(lowTranscript);
+
+  return { insuranceDetected, stateDetected, stateConfidence, wantsList, wantsPsych, wantsTher };
 }
 
 // ---------------------------- AOAI helper ----------------------------
@@ -355,26 +366,25 @@ ${bullets}`;
     } catch { /* optional */ }
 
     // Facts from convo
-const {
-  insuranceDetected, stateDetected, stateConfidence, wantsList, wantsPsych, wantsTher
-} = extractUserInfo(normalizedHistory, userMessage);
+    const {
+      insuranceDetected, stateDetected, stateConfidence, wantsList, wantsPsych, wantsTher
+    } = extractUserInfo(normalizedHistory, userMessage);
 
-const state   = stateDetected || "";
-const insurer = insuranceDetected || "";
+    const state   = stateDetected || "";
+    const insurer = insuranceDetected || "";
 
-const directoryLoaded = PROVIDERS.length > 0;
+    // ---------- Deterministic provider listing branch ----------
+    const directoryLoaded = PROVIDERS.length > 0;
 
-// Only fire deterministic list when explicitly asked OR we have confident state + role
-const explicitList = wantsList || /options?/i.test(userMessage);
-const roles = (wantsPsych && wantsTher) ? ["psychiatrist","therapist"]
-            : wantsPsych ? ["psychiatrist"]
-            : wantsTher  ? ["therapist"]
-            : [];
+    // Only fire deterministic list when explicitly asked (no auto-dump mid-flow)
+    const explicitList = wantsList || /options?/i.test(userMessage) || req.query?.list === "1";
 
-const enoughToList = (state && stateConfidence === "high" && roles.length > 0);
-const listFlag = (explicitList || enoughToList);
+    const roles = (wantsPsych && wantsTher) ? ["psychiatrist","therapist"]
+                : wantsPsych ? ["psychiatrist"]
+                : wantsTher  ? ["therapist"]
+                : []; // unknown until user asks
 
-    if ((listFlag || enoughToList) && directoryLoaded){
+    if (explicitList && directoryLoaded){
       const chosenRoles = roles.length ? roles : ["psychiatrist","therapist"];
       const sections = [];
 
@@ -395,13 +405,24 @@ const listFlag = (explicitList || enoughToList);
 
       const listBody = sections.length
         ? sections.join("\n\n")
-        : "No exact matches with current filters. Widen to out-of-network or nearby states?";
+        : "No exact matches with current filters. Widen to out-of-network, nearby licensed states, or switch specialty?";
 
       context.res = { status:200, headers:{ "Content-Type":"application/json" }, body:{ reply: listBody } };
       return;
     }
 
     // ---------- LLM path (with minimal directory injection) ----------
+    // Optional fallback hint when a specific state+role appears empty
+    let fallbackNote = "";
+    if (state && roles.includes("psychiatrist")) {
+      const empty = matchProviders({ state, role:"psychiatrist" }).length === 0;
+      if (empty) {
+        fallbackNote = `
+# Matching hint (do not quote):
+- If no psychiatrists are licensed in the user’s state, offer: (a) nearby licensed states if user can use a qualifying address; (b) out-of-network + superbill; (c) therapist now + prescriber waitlist.`;
+      }
+    }
+
     let directoryContext = "";
     if ((state || insurer) && directoryLoaded){
       const likelyRoles = roles.length ? roles : ["psychiatrist","therapist"];
@@ -431,6 +452,7 @@ ${sections.join("\n\n")}`;
       { role:"system", content:
           (SYS_PROMPT || "You are a helpful intake assistant.") +
           (directoryContext ? "\n\n"+directoryContext : "") +
+          (fallbackNote ? "\n\n"+fallbackNote : "") +
           contextBlock
       },
       ...normalizedHistory,
@@ -481,7 +503,9 @@ Known facts this turn: ${facts || "none"}.`;
 
       const nudged = [
         { role:"system", content:(SYS_PROMPT || "You are a helpful intake assistant.") +
-          (directoryContext ? "\n\n"+directoryContext : "") + contextBlock +
+          (directoryContext ? "\n\n"+directoryContext : "") +
+          (fallbackNote ? "\n\n"+fallbackNote : "") +
+          contextBlock +
           "\n\n# Style Nudge (do not output this)\n" + styleNudge },
         ...normalizedHistory,
         { role:"user", content:userMessage }
@@ -505,8 +529,15 @@ Known facts this turn: ${facts || "none"}.`;
       return;
     }
 
-    // Debug view
+    // --- Debug view ---
     if (req.query?.debug === "1"){
+      const countsBy = (arr, keyFn) => arr.reduce((m, x) => {
+        const k = keyFn(x); m[k] = (m[k] || 0) + 1; return m;
+      }, {});
+      const byRole = countsBy(PROVIDERS, p => p.role || "unknown");
+      const stateCode = state || "AZ"; // default to AZ in case none detected (handy for checks)
+      const byStateRole = countsBy(PROVIDERS.filter(p => p.states?.includes(stateCode)), p => p.role || "unknown");
+
       context.res = { status:200, headers:{ "Content-Type":"application/json" }, body:{
         reply,
         finish_reason: choice?.finish_reason,
@@ -521,6 +552,11 @@ Known facts this turn: ${facts || "none"}.`;
         },
         provider_counts: { providers: PROVIDERS.length, slots: SLOTS.length },
         provider_paths: DEBUG_PATHS,
+        provider_summary: {
+          total_providers: PROVIDERS.length,
+          by_role: byRole,
+          [stateCode + "_by_role"]: byStateRole
+        },
         search_used: !!searchItems.length,
         search_items: searchItems,
         history_len: normalizedHistory.length
