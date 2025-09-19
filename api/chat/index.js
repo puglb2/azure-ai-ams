@@ -2,12 +2,17 @@
 const fs = require("fs");
 const path = require("path");
 
+// ---------- config: how many slots to SHOW by default ----------
+const SHOW_SLOTS_DEFAULT = 3;     // shortlist snippets
+const SHOW_SLOTS_PROVIDER = 6;    // when a specific provider is mentioned or "later/3pm" asked
+
 // ---------- load & cache instruction + data files ----------
 let SYS_PROMPT = "", FAQ_SNIPPET = "", POLICIES_SNIPPET = "";
 let PROVIDERS_TXT = "", PROVIDER_SCHEDULE_TXT = "";
 
 let PROVIDERS = [];      // [{id,name,role,states[],insurers[],raw, is_prescriber}]
 let SLOTS = [];          // [{id,date,time}]
+let NAME_INDEX = null;   // token -> Set<prov_id>
 
 function readIfExists(p){ try{ return fs.readFileSync(p,"utf8"); } catch{ return ""; } }
 
@@ -52,26 +57,18 @@ ${POLICIES_SNIPPET}`.trim();
   // Parse providers + schedule into structured caches
   PROVIDERS = parseProvidersFreeform(PROVIDERS_TXT);
   SLOTS     = parseSlots(PROVIDER_SCHEDULE_TXT);
+  NAME_INDEX = buildProviderNameIndex(PROVIDERS);
 }
 
 // ---------- provider parsing + matching (FREEFORM FORMAT) ----------
-// Your file format is free-form blocks like:
-// prov_001  Allison Hill (PsyD) — Therapy
-//   Licensed states: CO, NM, NY
-//   Insurance: Aetna, Humana
-//   ...
-//
-// We extract: id, name, role, is_prescriber, states[], insurers[].
-
 function inferRoleFromHeader(headerLine){
-  // headerLine: "Allison Hill (PsyD) — Therapy"
+  // headerLine example: "Allison Hill (PsyD) — Therapy"
   const roleTag = (headerLine.split("—")[1] || "").trim().toLowerCase(); // therapy|psychiatry|both
   const hasPrescriberCred = /\b(md|do|pmhnp)\b/i.test(headerLine);
   if (/psychiatry/.test(roleTag) && hasPrescriberCred) return { role: "psychiatrist", is_prescriber: true };
   if (/psychiatry/.test(roleTag) && !hasPrescriberCred) return { role: "therapist", is_prescriber: false }; // safeguard
   if (/both/.test(roleTag) && hasPrescriberCred) return { role: "psychiatrist", is_prescriber: true };
   if (/both/.test(roleTag)) return { role: "therapist", is_prescriber: false };
-  // therapy or unknown → therapist
   return { role: "therapist", is_prescriber: false };
 }
 
@@ -94,7 +91,6 @@ function parseProvidersFreeform(txt){
     const m = first.match(/^(prov_\d+)\s+(.+)$/i);
     if (!m) continue;
     const id = m[1];
-
     const header = (m[2] || "").trim(); // "<Name> — <Tag>"
     const name = (header.split("—")[0] || "").trim();
 
@@ -103,11 +99,8 @@ function parseProvidersFreeform(txt){
     const statesLine   = (b.match(/Licensed states:\s*([^\n]+)/i)?.[1] || "").trim();
     const insurersLine = (b.match(/Insurance:\s*([^\n]+)/i)?.[1] || "").trim();
 
-    const states = statesLine
-      .split(",").map(s=>s.trim().toUpperCase()).filter(Boolean);
-
-    const insurers = insurersLine
-      .split(",").map(s=>normalizeIns(s)).filter(Boolean);
+    const states = statesLine.split(",").map(s=>s.trim().toUpperCase()).filter(Boolean);
+    const insurers = insurersLine.split(",").map(s=>normalizeIns(s)).filter(Boolean);
 
     out.push({ id, name, role, is_prescriber, states, insurers, raw: b });
   }
@@ -122,13 +115,40 @@ function parseSlots(txt){
   }).filter(s => s.id && s.date && s.time);
 }
 
-function soonestSlotsFor(id, limit=2){
+// ---------- slot helpers (SHOW few, READ all) ----------
+function soonestSlotsFor(id, limit=SHOW_SLOTS_DEFAULT){
   return SLOTS
     .filter(s => s.id === id)
     .sort((a,b) => (a.date+a.time).localeCompare(b.date+b.time))
     .slice(0, limit);
 }
 
+function upcomingSlotsFor(id, fromDate=""){
+  const fromKey = (fromDate || "0000-00-00") + "00:00";
+  return SLOTS
+    .filter(s => s.id === id)
+    .sort((a,b) => (a.date+a.time).localeCompare(b.date+b.time))
+    .filter(s => (s.date+s.time) >= fromKey);
+}
+
+// exact time across days (e.g., “3pm”)
+function findSlotsAtTime(id, hhmm="15:00", fromDate=""){
+  const fromKey = (fromDate || "0000-00-00") + hhmm;
+  return SLOTS
+    .filter(s => s.id === id && s.time === hhmm)
+    .sort((a,b) => (a.date+a.time).localeCompare(b.date+b.time))
+    .filter(s => (s.date+s.time) >= fromKey);
+}
+
+// closest future alternatives if exact time not available
+function nearestNextSlots(id, afterDateTimeKey, limit=SHOW_SLOTS_PROVIDER){
+  return SLOTS
+    .filter(s => s.id === id && (s.date+s.time) > afterDateTimeKey)
+    .sort((a,b) => (a.date+a.time).localeCompare(b.date+b.time))
+    .slice(0, limit);
+}
+
+// ---------- matching ----------
 function matchProviders({ state, insurer, role }){
   const wantRole = (role||"").toLowerCase();   // "therapist" | "psychiatrist" | ""
   const wantIns  = (insurer||"").toLowerCase();
@@ -148,6 +168,42 @@ function matchProviders({ state, insurer, role }){
     );
   }
   return list;
+}
+
+// ---------- provider name index & detection ----------
+function buildProviderNameIndex(list){
+  const idx = new Map();
+  for (const p of list){
+    const parts = (p.name || "").toLowerCase().split(/\s+/).filter(Boolean);
+    const uniq = new Set(parts);
+    for (const t of uniq){
+      if (!idx.has(t)) idx.set(t, new Set());
+      idx.get(t).add(p.id);
+    }
+    const last = parts[parts.length - 1];
+    if (last) {
+      if (!idx.has(last)) idx.set(last, new Set());
+      idx.get(last).add(p.id);
+    }
+  }
+  return idx;
+}
+
+function detectProviderMention(userText, nameIndex){
+  const toks = (userText||"").toLowerCase().match(/[a-z]+/g) || [];
+  const tallies = new Map();
+  for (const t of toks){
+    const set = nameIndex.get(t);
+    if (!set) continue;
+    for (const id of set){
+      tallies.set(id, (tallies.get(id)||0) + 1);
+    }
+  }
+  let best = "", score = 0;
+  for (const [id, s] of tallies.entries()){
+    if (s > score){ best = id; score = s; }
+  }
+  return best; // "" if none
 }
 
 // ---------- Azure AI Search (optional grounding) ----------
@@ -265,6 +321,27 @@ function extractUserInfo(normalizedHistory, userMessage){
 const looksLikeOpener = (txt) =>
   /can you (share|tell)|what’s been going on|how (has|is) that|can you say more/i.test((txt||""));
 
+// ---------- provider/time intent helpers ----------
+function parseTimeRequest(text){
+  // matches: 3pm, 3 pm, 3:00 pm, 15:00
+  const m = (text||"").toLowerCase().match(/\b(\d{1,2})(?::?(\d{2}))?\s*(am|pm)?\b/);
+  if (!m) return null;
+  let hh = parseInt(m[1], 10);
+  const mm = m[2] ? m[2] : "00";
+  const ampm = m[3];
+  if (ampm === "pm" && hh < 12) hh += 12;
+  if (ampm === "am" && hh === 12) hh = 0;
+  if (hh >= 0 && hh <= 23){
+    const HH = String(hh).padStart(2,"0");
+    return `${HH}:${mm}`;
+  }
+  return null;
+}
+
+function mentionsLater(text){
+  return /\b(later|another day|next week|after|evening)\b/i.test(text||"");
+}
+
 // ---------- AOAI helper ----------
 async function callAOAI(url, messages, temperature, maxTokens, apiKey){
   const resp = await fetch(url, {
@@ -331,7 +408,12 @@ ${bullets}`;
     const userExplicitlyAsked = !!wantsList;  // “list/options/suggest providers”
     const shouldShowDirectory = userExplicitlyAsked || haveEnoughToMatch;
 
-    // ---- Build provider directory context ONLY if allowed ----
+    // ---- (NEW) provider/time targeting based on current user turn ----
+    const mentionedId = detectProviderMention(userMessage, NAME_INDEX);
+    const hhmmReq     = parseTimeRequest(userMessage);
+    const wantsLater  = mentionsLater(userMessage);
+
+    // ---- Build provider directory context ONLY if allowed (shortlists) ----
     let directoryContext = "";
     if (shouldShowDirectory && PROVIDERS.length){
       const roles = ["psychiatrist","therapist"];
@@ -340,7 +422,8 @@ ${bullets}`;
         const matched = matchProviders({ state, insurer, role }).slice(0, 6);
         if (matched.length){
           const lines = matched.map(p => {
-            const slotStr = soonestSlotsFor(p.id).map(s => `${s.date} ${s.time}`).join(", ");
+            const slotStr = soonestSlotsFor(p.id, SHOW_SLOTS_DEFAULT)
+              .map(s => `${s.date} ${s.time}`).join(", ");
             const ins   = (p.insurers||[]).join(", ") || "cashpay";
             const stStr = p.states?.join(", ") || "";
             return `- ${p.name} (${role}) — licensed: ${stStr} — in-net: ${ins}${slotStr?` — soonest: ${slotStr}`:""}`;
@@ -357,11 +440,47 @@ ${sections.join("\n\n")}`;
       }
     }
 
+    // ---- (NEW) Provider-specific compact availability when named or time asked ----
+    let providerAvailabilityContext = "";
+    if (mentionedId){
+      const prov = PROVIDERS.find(p => p.id === mentionedId);
+      if (prov){
+        let lines = [];
+        if (hhmmReq){
+          const exact = findSlotsAtTime(mentionedId, hhmmReq);
+          if (exact.length){
+            lines = exact.slice(0, SHOW_SLOTS_PROVIDER).map(s => `- ${s.date} ${s.time}`);
+          } else {
+            // no exact match at that time → nearest future options
+            const afterKey = "0000-00-00" + hhmmReq;
+            const near = nearestNextSlots(mentionedId, afterKey, SHOW_SLOTS_PROVIDER);
+            lines = near.map(s => `- ${s.date} ${s.time}`);
+          }
+        } else if (wantsLater){
+          lines = upcomingSlotsFor(mentionedId).slice(0, SHOW_SLOTS_PROVIDER)
+            .map(s => `- ${s.date} ${s.time}`);
+        } else {
+          // user picked provider but no time constraints → show a little more than shortlist
+          lines = soonestSlotsFor(mentionedId, SHOW_SLOTS_PROVIDER)
+            .map(s => `- ${s.date} ${s.time}`);
+        }
+
+        if (lines.length){
+          providerAvailabilityContext = `
+# Availability (exact; do not invent)
+Provider: ${prov.name} (${prov.role})
+Slots (next 14 days):
+${lines.join("\n")}`.trim();
+        }
+      }
+    }
+
     // ---- Build messages
     const messages = [
       { role:"system", content:
           (SYS_PROMPT || "You are a helpful intake assistant.") +
-          (directoryContext ? directoryContext : "") +
+          (directoryContext ? "\n\n" + directoryContext : "") +
+          (providerAvailabilityContext ? "\n\n" + providerAvailabilityContext : "") +
           contextBlock
       },
       ...normalizedHistory,
@@ -409,7 +528,9 @@ Known facts this turn: ${facts || "none"}.`;
 
       const nudged = [
         { role:"system", content:(SYS_PROMPT || "You are a helpful intake assistant.") +
-          (directoryContext ? directoryContext : "") + contextBlock +
+          (directoryContext ? "\n\n" + directoryContext : "") +
+          (providerAvailabilityContext ? "\n\n" + providerAvailabilityContext : "") +
+          contextBlock +
           "\n\n# Style Nudge (do not output this)\n" + styleNudge },
         ...normalizedHistory,
         { role:"user", content:userMessage }
@@ -455,6 +576,9 @@ Known facts this turn: ${facts || "none"}.`;
         },
         selected_state: state,
         selected_insurer: insurer,
+        mentioned_provider_id: mentionedId,
+        time_requested: hhmmReq,
+        wants_later: wantsLater,
         search_used: !!searchItems.length,
         search_items: searchItems,
         history_len: normalizedHistory.length
