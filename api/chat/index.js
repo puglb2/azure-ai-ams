@@ -2,7 +2,7 @@
 const fs = require("fs");
 const path = require("path");
 
-// ---------- load & cache instruction + data files ----------
+// ---------------------------- Cold-start caches ----------------------------
 let SYS_PROMPT = "", FAQ_SNIPPET = "", POLICIES_SNIPPET = "";
 let PROVIDERS_TXT = "", PROVIDER_SCHEDULE_TXT = "";
 let PROVIDERS = [], SLOTS = [];
@@ -10,21 +10,16 @@ let PROVIDERS = [], SLOTS = [];
 function readIfExists(p){ try{ return fs.readFileSync(p,"utf8"); } catch{ return ""; } }
 
 function initConfig(){
-  if (SYS_PROMPT) return; // only on cold start
+  if (SYS_PROMPT) return; // cold start only
 
   const cfgDir  = path.join(__dirname, "../_config");
   const dataDir = path.join(__dirname, "../_data");
 
-  // Core instruction files
+  // Core prompts
   SYS_PROMPT       = readIfExists(path.join(cfgDir, "system_prompt.txt")).trim();
   FAQ_SNIPPET      = readIfExists(path.join(cfgDir, "faqs.txt")).trim();
   POLICIES_SNIPPET = readIfExists(path.join(cfgDir, "policies.txt")).trim();
 
-  // Provider directory files (raw)
-  PROVIDERS_TXT          = readIfExists(path.join(dataDir, "providers_100.txt")).trim();
-  PROVIDER_SCHEDULE_TXT  = readIfExists(path.join(dataDir, "provider_schedule_14d.txt")).trim();
-
-  // Merge FAQ and Policy snippets into system prompt
   if (FAQ_SNIPPET) {
     SYS_PROMPT += `
 
@@ -47,12 +42,18 @@ ${POLICIES_SNIPPET}`.trim();
 - Routine help requests are not crisis; only explicit imminent risk is crisis.
 - Keep responses concise, natural, and varied. Plain text only.`;
 
-  // Parse providers + schedule into structured caches
+  // Local directory files (raw)
+  const provPath = path.join(dataDir, "providers_100.txt");
+  const slotPath = path.join(dataDir, "provider_schedule_14d.txt");
+  PROVIDERS_TXT         = readIfExists(provPath).trim();
+  PROVIDER_SCHEDULE_TXT = readIfExists(slotPath).trim();
+
+  // Parse into structured caches (safe if empty)
   PROVIDERS = parseProviders(PROVIDERS_TXT);
   SLOTS     = parseSchedule(PROVIDER_SCHEDULE_TXT);
 }
 
-// ---------- provider parsing + matching ----------
+// ---------------------------- Provider utilities ----------------------------
 function parseProviders(txt){
   if (!txt) return [];
   return txt.trim().split(/\r?\n/).map(line => {
@@ -103,7 +104,7 @@ function matchProviders({ state, insurer, role }){
     (!wantIns  || p.insurers.includes(wantIns))
   );
 
-  // if none, relax insurer but keep role/state
+  // If none, relax insurer but keep role/state
   if (!list.length && (wantRole || wantSt)) {
     list = PROVIDERS.filter(p =>
       (!wantRole || p.role === wantRole) &&
@@ -120,7 +121,7 @@ function soonestSlotsFor(id, limit=2){
     .slice(0, limit);
 }
 
-// ---------- Azure AI Search (optional grounding) ----------
+// ---------------------------- Azure AI Search (optional) ----------------------------
 async function querySearch(q){
   const endpoint = ((process.env.AZURE_SEARCH_ENDPOINT||"")+"").trim().replace(/\/+$/,"");
   const key      = ((process.env.AZURE_SEARCH_KEY||"")+"").trim();
@@ -154,7 +155,7 @@ async function querySearch(q){
   return items.slice(0,3);
 }
 
-// ---------- heuristics & extraction ----------
+// ---------------------------- Heuristics & extraction ----------------------------
 const looksLikeOpener = (txt) =>
   /can you (share|tell)|what’s been going on|how (has|is) that|can you say more/i.test((txt||""));
 
@@ -166,20 +167,22 @@ function extractUserInfo(normalizedHistory, userMessage){
   const insuranceDetected = insMatch ? insMatch[1].toUpperCase().replace(/\s+/g," ") : "";
 
   const ZIP_PAT = /\b\d{5}\b/;
-  const CITY_PAT = /\b(phoenix|scottsdale|tempe|mesa|chandler|glendale|tucson|flagstaff|yuma|peoria|gilbert)\b/i; // extend as needed
+  const CITY_PAT = /\b(phoenix|scottsdale|tempe|mesa|chandler|glendale|tucson|flagstaff|yuma|peoria|gilbert)\b/i;
   const zipDetected = (transcriptWindow.match(ZIP_PAT) || [])[0] || "";
   const cityDetected = (transcriptWindow.match(CITY_PAT) || [])[0] || "";
 
   const STATE_PAT = /\b(arizona|az)\b/i;
   const stateDetected = STATE_PAT.test(transcriptWindow) ? "AZ" : "";
 
-  // very light intent: user wants provider list?
   const wantsList = /\b(list|show)\b.+\bproviders?\b|\bproviders?\b.*\b(do you have|what|which)\b|^providers?$/i.test(transcriptWindow);
 
-  return { insuranceDetected, zipDetected, cityDetected, stateDetected, wantsList };
+  const wantsPsych = /\bpsychiat(ry|rist)?\b/i.test(transcriptWindow) || /\bmeds?|medication\b/i.test(transcriptWindow) || /\bboth\b/i.test(transcriptWindow);
+  const wantsTher  = /\btherap(y|ist)\b/i.test(transcriptWindow) || /\bboth\b/i.test(transcriptWindow);
+
+  return { insuranceDetected, zipDetected, cityDetected, stateDetected, wantsList, wantsPsych, wantsTher };
 }
 
-// ---------- AOAI helper ----------
+// ---------------------------- AOAI helper ----------------------------
 async function callAOAI(url, messages, temperature, maxTokens, apiKey){
   const resp = await fetch(url, {
     method:"POST",
@@ -191,7 +194,7 @@ async function callAOAI(url, messages, temperature, maxTokens, apiKey){
   return { resp, data };
 }
 
-// ---------- main handler ----------
+// ---------------------------- Main handler ----------------------------
 module.exports = async function (context, req){
   try{
     initConfig();
@@ -202,14 +205,14 @@ module.exports = async function (context, req){
       return;
     }
 
-    // history from client (keep last N turns)
+    // History window
     const history = Array.isArray(req.body?.history) ? req.body.history : [];
     const normalizedHistory = history.slice(-24).map(m => ({
       role: m?.role === 'assistant' ? 'assistant' : 'user',
       content: ((m?.content || '') + '').trim()
     })).filter(m => m.content);
 
-    // env vars for AOAI
+    // AOAI env
     const apiVersion = ((process.env.AZURE_OPENAI_API_VERSION||"2024-08-01-preview")+"").trim();
     const endpoint   = ((process.env.AZURE_OPENAI_ENDPOINT||"")+"").trim().replace(/\/+$/,"");
     const deployment = ((process.env.AZURE_OPENAI_DEPLOYMENT||"")+"").trim();
@@ -220,60 +223,94 @@ module.exports = async function (context, req){
     }
     const url = `${endpoint}/openai/deployments/${deployment}/chat/completions?api-version=${apiVersion}`;
 
-    // ---- Retrieval via Azure AI Search (optional grounding) ----
+    // Optional retrieval
     let contextBlock = "";
     let searchItems = [];
     const lastUser = (normalizedHistory.slice().reverse().find(m => m.role==='user') || {}).content || "";
     const retrievalQuery = (userMessage + " " + lastUser).slice(0, 400);
-    searchItems = await querySearch(retrievalQuery);
-    if (searchItems.length){
-      const bullets = searchItems.map(x => `- ${x.text}`).join("\n");
-      contextBlock = `
+    try{
+      searchItems = await querySearch(retrievalQuery);
+      if (searchItems.length){
+        const bullets = searchItems.map(x => `- ${x.text}`).join("\n");
+        contextBlock = `
 
 # Retrieved context (for your internal grounding; summarize if used):
 ${bullets}`;
-    }
+      }
+    } catch { /* retrieval optional */ }
 
-    // ---- Provider directory context (deterministic, non-hallucinatory) ----
-    const { insuranceDetected, cityDetected, stateDetected, wantsList } =
+    // Facts from convo
+    const { insuranceDetected, stateDetected, wantsList, wantsPsych, wantsTher } =
       extractUserInfo(normalizedHistory, userMessage);
 
-    // Prefer state from convo; you can upgrade this if you store state in session
-    const state = stateDetected || "";
+    const state   = stateDetected || "";
     const insurer = insuranceDetected || "";
 
-    // Heuristic: infer roles user might care about from convo; default to both
-    const wantsPsych = /\bpsych(ology|iatry|iatrist)?\b/i.test(userMessage) || /psychiat/i.test(userMessage) || /both/i.test(userMessage);
-    const wantsTher  = /\btherap(y|ist)\b/i.test(userMessage) || /both/i.test(userMessage);
+    // ---------- Deterministic provider listing branch ----------
+    // If the user asks to list providers OR we have enough info (state + role),
+    // return a server-generated list (no LLM → no hallucinations).
+    const listFlag = wantsList || req.query?.list === "1";
     const roles = (wantsPsych && wantsTher) ? ["psychiatrist","therapist"]
                 : wantsPsych ? ["psychiatrist"]
                 : wantsTher  ? ["therapist"]
-                : ["psychiatrist","therapist"];
+                : []; // if empty, we'll still try both when listFlag is true
 
-    let directoryContext = "";
-    if (state || insurer || wantsList) {
-      // collect top matches per role
+    const enoughToList = !!state && roles.length > 0;
+
+    if ((listFlag || enoughToList) && PROVIDERS.length){
+      const chosenRoles = roles.length ? roles : ["psychiatrist","therapist"];
       const sections = [];
-      for (const role of roles){
+
+      for (const role of chosenRoles){
         const matched = matchProviders({ state, insurer, role }).slice(0, 5);
         if (matched.length){
-          const lines = matched.map(p => {
-            const slots = soonestSlotsFor(p.id).map(s => `${s.date} ${s.time}`).join(", ");
-            return `- ${p.name} (${p.role}), ${p.city}, ${p.state}; insurers: ${p.insurers.join(", ")}${slots ? `; soonest: ${slots}` : ""}`;
-          }).join("\n");
           const title = role === "therapist" ? "Therapists" : "Psychiatrists";
-          sections.push(`${title} (in-network prioritized):\n${lines}`);
+          const lines = matched.map(p => {
+            const slot = (soonestSlotsFor(p.id, 1)[0] || null);
+            const slotStr = slot ? ` — soonest: ${slot.date} ${slot.time}` : "";
+            return `• ${p.name} — ${p.city}, ${p.state} — in-net: ${p.insurers.join(", ")}${slotStr}`;
+          });
+          sections.push(`${title}:\n${lines.join("\n")}`);
+        }
+      }
+
+      const listBody = sections.length
+        ? sections.join("\n\n")
+        : "No exact matches with current filters. Widen to out-of-network or nearby states?";
+
+      context.res = { status:200, headers:{ "Content-Type":"application/json" }, body:{ reply: listBody } };
+      return;
+    }
+
+    // ---------- LLM path (with minimal directory injection) ----------
+    // Build a compact directory context only when useful to reduce token cost.
+    let directoryContext = "";
+    if ((state || insurer) && PROVIDERS.length){
+      // Keep this tight: top 3 per likely role
+      const likelyRoles = roles.length ? roles : ["psychiatrist","therapist"];
+      const sections = [];
+      for (const role of likelyRoles){
+        const matched = matchProviders({ state, insurer, role }).slice(0, 3);
+        if (matched.length){
+          const title = role === "therapist" ? "Therapists" : "Psychiatrists";
+          const lines = matched.map(p => {
+            return `- ${p.name} (${p.role}), ${p.city}, ${p.state}; in-net: ${p.insurers.slice(0,2).join(", ")}`;
+          }).join("\n");
+          sections.push(`${title} (use only these; do NOT invent):\n${lines}`);
         }
       }
       if (sections.length){
         directoryContext = `
 
-# Provider Directory (use only entries listed here; do not invent)
+# Provider Directory (read-only; do NOT invent beyond these)
 ${sections.join("\n\n")}`;
+        // Hard cap to keep prompt small
+        if (directoryContext.length > 1200) {
+          directoryContext = directoryContext.slice(0, 1200) + "\n…";
+        }
       }
     }
 
-    // ---- Build messages
     const messages = [
       { role:"system", content:
           (SYS_PROMPT || "You are a helpful intake assistant.") +
@@ -284,19 +321,20 @@ ${sections.join("\n\n")}`;
       { role:"user", content:userMessage }
     ];
 
-    // ---- Choose output token budget (keep reasoning strong on long turns)
-    const LONG_HISTORY = (normalizedHistory.length >= 12);
-    const REASONING_FLOOR = LONG_HISTORY ? 2048 : 2048;
-    const requestedMax = Number.isFinite(req.body?.max_output_tokens) ? req.body.max_output_tokens : 0;
-    const maxTokens = Math.max(requestedMax, REASONING_FLOOR);
+    // Dynamic output budget: keep reasoning strong, cap cost
+    const LONG_HISTORY = normalizedHistory.length >= 12;
+    const REASONING_FLOOR = LONG_HISTORY ? 2048 : 1024;       // strong reasoning, minimal blanks
+    const REQUESTED = Number.isFinite(req.body?.max_output_tokens) ? req.body.max_output_tokens : 0;
+    const SOFT_CAP = 3072;                                     // control cost & latency
+    const maxTokens = Math.min(Math.max(REQUESTED, REASONING_FLOOR), SOFT_CAP);
 
-    // ---- First call
+    // First call
     let { resp, data } = await callAOAI(url, messages, 1, maxTokens, apiKey);
     const safeChoice = (d) => d && Array.isArray(d.choices) ? d.choices[0] : undefined;
     let choice = safeChoice(data);
     let reply  = (choice?.message?.content || "").trim();
 
-    // Never show a blank if we hit the cap
+    // Never return blank on length
     if (choice?.finish_reason === "length") {
       reply = reply ? (reply + " …") : "(I hit a token limit — continue?)";
     }
@@ -306,11 +344,10 @@ ${sections.join("\n\n")}`;
         const cfr = r?.content_filter_results; return cfr && Object.values(cfr).some(v => v?.filtered);
       }));
 
-    // progression checks
+    // Progression nudge if needed
     const lastTurns = normalizedHistory.slice(-24);
     const clarifiersAsked = lastTurns.filter(m => m.role==='assistant' && /\?\s*$/.test(m.content)).length;
 
-    // --- If empty/filtered OR still an opener after 2 clarifiers: one more model-led nudge
     if (((!reply || filtered) || (clarifiersAsked >= 2 && looksLikeOpener(reply))) && resp.ok){
       const styles = ["warm-brief", "reassuring-practical", "concise-direct"];
       const styleTag = styles[Math.floor(Math.random() * styles.length)];
@@ -343,7 +380,6 @@ Known facts this turn: ${facts || "none"}.`;
           reply = reply ? (reply + " …") : "(I hit a token limit — continue?)";
         }
       } else {
-        // graceful fallback instead of 500
         reply ||= "(I’m having trouble reaching the model right now. Want me to try again?)";
       }
     }
@@ -353,7 +389,7 @@ Known facts this turn: ${facts || "none"}.`;
       return;
     }
 
-    // optional debug
+    // Debug view
     if (req.query?.debug === "1"){
       context.res = { status:200, headers:{ "Content-Type":"application/json" }, body:{
         reply,
@@ -377,7 +413,7 @@ Known facts this turn: ${facts || "none"}.`;
 
     context.res = { status:200, headers:{ "Content-Type":"application/json" }, body:{ reply } };
   } catch(e){
-    // Keep it JSON (avoid HTML/hex 500)
+    // Always JSON (avoid HTML/hex)
     context.res = { status:500, headers:{ "Content-Type":"application/json" }, body:{ error:"server error", detail:String(e) } };
   }
 };
