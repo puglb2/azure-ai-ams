@@ -6,6 +6,7 @@ const path = require("path");
 let SYS_PROMPT = "", FAQ_SNIPPET = "", POLICIES_SNIPPET = "";
 let PROVIDERS_TXT = "", PROVIDER_SCHEDULE_TXT = "";
 let PROVIDERS = [], SLOTS = [];
+let DEBUG_PATHS = { provPath: "", provExists: false, slotPath: "", slotExists: false };
 
 function readIfExists(p){ try{ return fs.readFileSync(p,"utf8"); } catch{ return ""; } }
 
@@ -35,6 +36,11 @@ ${POLICIES_SNIPPET}`.trim();
 
   SYS_PROMPT += `
 
+# Directory rule (strict; do NOT quote this):
+- Do NOT invent provider names, emails, or time slots.
+- Only reference providers explicitly supplied by the server in "Provider Directory".
+- If no directory entries are provided, say you can’t list specific providers and offer next steps.
+
 # Conversation guidance (do not quote this):
 - Ask at most two brief clarifying questions before offering a next step.
 - Then offer a concise, concrete recommendation (therapy, psychiatry, or both) with a short rationale.
@@ -42,11 +48,15 @@ ${POLICIES_SNIPPET}`.trim();
 - Routine help requests are not crisis; only explicit imminent risk is crisis.
 - Keep responses concise, natural, and varied. Plain text only.`;
 
-  // Local directory files (raw)
+  // Local directory files (raw) + existence debug
   const provPath = path.join(dataDir, "providers_100.txt");
   const slotPath = path.join(dataDir, "provider_schedule_14d.txt");
-  PROVIDERS_TXT         = readIfExists(provPath).trim();
-  PROVIDER_SCHEDULE_TXT = readIfExists(slotPath).trim();
+  const provExists = fs.existsSync(provPath);
+  const slotExists = fs.existsSync(slotPath);
+  DEBUG_PATHS = { provPath, provExists, slotPath, slotExists };
+
+  PROVIDERS_TXT         = provExists ? readIfExists(provPath).trim() : "";
+  PROVIDER_SCHEDULE_TXT = slotExists ? readIfExists(slotPath).trim() : "";
 
   // Parse into structured caches (safe if empty)
   PROVIDERS = parseProviders(PROVIDERS_TXT);
@@ -61,11 +71,11 @@ function parseProviders(txt){
     const [id, name, role, insurersCsv, cityst] = (line||"").split("|");
     const [city, st] = (cityst||"").split(",").map(s => (s||"").trim());
     return {
-      id,
-      name,
+      id: (id||"").trim(),
+      name: (name||"").trim(),
       role: (role||"").toLowerCase(), // "therapist" | "psychiatrist"
       insurers: (insurersCsv||"").split(",").map(s=>s.trim().toLowerCase()).filter(Boolean),
-      city: city || "",
+      city: (city||"").trim(),
       state: (st||"").toUpperCase()
     };
   }).filter(p => p.id && p.name);
@@ -76,7 +86,7 @@ function parseSchedule(txt){
   return txt.trim().split(/\r?\n/).map(line => {
     // Format: id|YYYY-MM-DD|HH:MM
     const [id, date, time] = (line||"").split("|");
-    return { id, date, time };
+    return { id: (id||"").trim(), date: (date||"").trim(), time: (time||"").trim() };
   }).filter(s => s.id && s.date && s.time);
 }
 
@@ -114,9 +124,15 @@ function matchProviders({ state, insurer, role }){
   return list;
 }
 
-function soonestSlotsFor(id, limit=2){
+// Date-only future check (timezone-agnostic)
+function isUpcomingDateOnly(dateStr){
+  const todayStr = new Date().toISOString().slice(0,10);
+  return (dateStr || "") >= todayStr;
+}
+
+function upcomingSlotsFor(id, limit=2){
   return SLOTS
-    .filter(s => s.id === id)
+    .filter(s => s.id === id && isUpcomingDateOnly(s.date))
     .sort((a,b) => (a.date+a.time).localeCompare(b.date+b.time))
     .slice(0, limit);
 }
@@ -223,7 +239,7 @@ module.exports = async function (context, req){
     }
     const url = `${endpoint}/openai/deployments/${deployment}/chat/completions?api-version=${apiVersion}`;
 
-    // Optional retrieval
+    // Optional retrieval (best-effort)
     let contextBlock = "";
     let searchItems = [];
     const lastUser = (normalizedHistory.slice().reverse().find(m => m.role==='user') || {}).content || "";
@@ -240,24 +256,24 @@ ${bullets}`;
     } catch { /* retrieval optional */ }
 
     // Facts from convo
-    const { insuranceDetected, stateDetected, wantsList, wantsPsych, wantsTher } =
-      extractUserInfo(normalizedHistory, userMessage);
+    const {
+      insuranceDetected, stateDetected, wantsList, wantsPsych, wantsTher
+    } = extractUserInfo(normalizedHistory, userMessage);
 
     const state   = stateDetected || "";
     const insurer = insuranceDetected || "";
 
     // ---------- Deterministic provider listing branch ----------
-    // If the user asks to list providers OR we have enough info (state + role),
-    // return a server-generated list (no LLM → no hallucinations).
+    const directoryLoaded = PROVIDERS.length > 0;
     const listFlag = wantsList || req.query?.list === "1";
     const roles = (wantsPsych && wantsTher) ? ["psychiatrist","therapist"]
                 : wantsPsych ? ["psychiatrist"]
                 : wantsTher  ? ["therapist"]
-                : []; // if empty, we'll still try both when listFlag is true
+                : []; // unknown yet
 
     const enoughToList = !!state && roles.length > 0;
 
-    if ((listFlag || enoughToList) && PROVIDERS.length){
+    if ((listFlag || enoughToList) && directoryLoaded){
       const chosenRoles = roles.length ? roles : ["psychiatrist","therapist"];
       const sections = [];
 
@@ -266,7 +282,7 @@ ${bullets}`;
         if (matched.length){
           const title = role === "therapist" ? "Therapists" : "Psychiatrists";
           const lines = matched.map(p => {
-            const slot = (soonestSlotsFor(p.id, 1)[0] || null);
+            const slot = (upcomingSlotsFor(p.id, 1)[0] || null);
             const slotStr = slot ? ` — soonest: ${slot.date} ${slot.time}` : "";
             return `• ${p.name} — ${p.city}, ${p.state} — in-net: ${p.insurers.join(", ")}${slotStr}`;
           });
@@ -283,10 +299,8 @@ ${bullets}`;
     }
 
     // ---------- LLM path (with minimal directory injection) ----------
-    // Build a compact directory context only when useful to reduce token cost.
     let directoryContext = "";
-    if ((state || insurer) && PROVIDERS.length){
-      // Keep this tight: top 3 per likely role
+    if ((state || insurer) && directoryLoaded){
       const likelyRoles = roles.length ? roles : ["psychiatrist","therapist"];
       const sections = [];
       for (const role of likelyRoles){
@@ -304,7 +318,6 @@ ${bullets}`;
 
 # Provider Directory (read-only; do NOT invent beyond these)
 ${sections.join("\n\n")}`;
-        // Hard cap to keep prompt small
         if (directoryContext.length > 1200) {
           directoryContext = directoryContext.slice(0, 1200) + "\n…";
         }
@@ -321,11 +334,11 @@ ${sections.join("\n\n")}`;
       { role:"user", content:userMessage }
     ];
 
-    // Dynamic output budget: keep reasoning strong, cap cost
+    // Dynamic output budget: strong reasoning, capped cost
     const LONG_HISTORY = normalizedHistory.length >= 12;
-    const REASONING_FLOOR = LONG_HISTORY ? 2048 : 1024;       // strong reasoning, minimal blanks
+    const REASONING_FLOOR = LONG_HISTORY ? 2048 : 1024;
     const REQUESTED = Number.isFinite(req.body?.max_output_tokens) ? req.body.max_output_tokens : 0;
-    const SOFT_CAP = 3072;                                     // control cost & latency
+    const SOFT_CAP = 3072;
     const maxTokens = Math.min(Math.max(REQUESTED, REASONING_FLOOR), SOFT_CAP);
 
     // First call
@@ -404,6 +417,7 @@ Known facts this turn: ${facts || "none"}.`;
           provider_schedule_txt: !!PROVIDER_SCHEDULE_TXT
         },
         provider_counts: { providers: PROVIDERS.length, slots: SLOTS.length },
+        provider_paths: DEBUG_PATHS,
         search_used: !!searchItems.length,
         search_items: searchItems,
         history_len: normalizedHistory.length
