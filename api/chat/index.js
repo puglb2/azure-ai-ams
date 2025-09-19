@@ -9,12 +9,25 @@ let PROVIDERS = [], SLOTS = [];
 let DEBUG_PATHS = { provPath: "", provExists: false, slotPath: "", slotExists: false };
 
 function readIfExists(p){ try{ return fs.readFileSync(p,"utf8"); } catch{ return ""; } }
+function exists(p){ try{ return fs.existsSync(p); } catch { return false; } }
+
+// Resolve data dir for both common deploy layouts:
+//   A) /home/site/wwwroot/api/_data
+//   B) /home/site/wwwroot/_data
+function resolveDataPath(){
+  const fromApi = path.join(__dirname, "../_data");
+  const fromRoot = path.join(__dirname, "../../_data");
+  if (exists(fromApi)) return fromApi;
+  if (exists(fromRoot)) return fromRoot;
+  // fallback to api-relative (it may still hold the files)
+  return fromApi;
+}
 
 function initConfig(){
   if (SYS_PROMPT) return; // cold start only
 
   const cfgDir  = path.join(__dirname, "../_config");
-  const dataDir = path.join(__dirname, "../_data");
+  const dataDir = resolveDataPath();
 
   // Core prompts
   SYS_PROMPT       = readIfExists(path.join(cfgDir, "system_prompt.txt")).trim();
@@ -48,11 +61,11 @@ ${POLICIES_SNIPPET}`.trim();
 - Routine help requests are not crisis; only explicit imminent risk is crisis.
 - Keep responses concise, natural, and varied. Plain text only.`;
 
-  // Local directory files (raw) + existence debug
+  // Local data files + existence debug
   const provPath = path.join(dataDir, "providers_100.txt");
   const slotPath = path.join(dataDir, "provider_schedule_14d.txt");
-  const provExists = fs.existsSync(provPath);
-  const slotExists = fs.existsSync(slotPath);
+  const provExists = exists(provPath);
+  const slotExists = exists(slotPath);
   DEBUG_PATHS = { provPath, provExists, slotPath, slotExists };
 
   PROVIDERS_TXT         = provExists ? readIfExists(provPath).trim() : "";
@@ -64,27 +77,95 @@ ${POLICIES_SNIPPET}`.trim();
 }
 
 // ---------------------------- Provider utilities ----------------------------
+// Your providers_100.txt format is block-based, e.g.:
+//
+// prov_001<TAB>Allison Hill (PsyD) — Therapy
+//   Styles: CBT-focused
+//   Languages: Spanish
+//   Licensed states: CO, NM, NY
+//   Insurance: Aetna, Humana
+//   Email: allison.hill@amsconnects.example
+//
+// (blank line between providers)
 function parseProviders(txt){
   if (!txt) return [];
-  return txt.trim().split(/\r?\n/).map(line => {
-    // Format: id|Name|Role|ins1,ins2,...|City, ST
-    const [id, name, role, insurersCsv, cityst] = (line||"").split("|");
-    const [city, st] = (cityst||"").split(",").map(s => (s||"").trim());
-    return {
-      id: (id||"").trim(),
-      name: (name||"").trim(),
-      role: (role||"").toLowerCase(), // "therapist" | "psychiatrist"
-      insurers: (insurersCsv||"").split(",").map(s=>s.trim().toLowerCase()).filter(Boolean),
-      city: (city||"").trim(),
-      state: (st||"").toUpperCase()
+
+  // Split into blocks separated by blank lines
+  const lines = txt.split(/\r?\n/);
+  const blocks = [];
+  let cur = [];
+  for (const raw of lines){
+    const line = (raw || "").replace(/\r/g, "");
+    if (line.trim() === ""){
+      if (cur.length) { blocks.push(cur); cur = []; }
+    } else {
+      cur.push(line);
+    }
+  }
+  if (cur.length) blocks.push(cur);
+
+  const out = [];
+  for (const block of blocks){
+    const first = (block[0] || "").trim();
+    // First line pattern: "prov_123  <name and creds> — Therapy|Psychiatry"
+    const m = first.match(/^(prov_[^\s]+)\s+(.+)$/i);
+    if (!m) continue;
+
+    const id = m[1].trim();
+    const title = m[2].trim(); // e.g., "Allison Hill (PsyD) — Therapy"
+
+    // Infer role
+    let role = "";
+    if (/psychiat/i.test(title)) role = "psychiatrist";
+    else if (/therap/i.test(title)) role = "therapist";
+
+    // Extract name (left of the em dash)
+    const namePart = title.split(/—/)[0].trim();
+
+    // Helper to read "Key: value" lines (case-insensitive)
+    const getVal = (label) => {
+      const row = block.find(l => l.trim().toLowerCase().startsWith(label));
+      if (!row) return "";
+      const idx = row.indexOf(":");
+      return idx >= 0 ? row.slice(idx+1).trim() : "";
     };
-  }).filter(p => p.id && p.name);
+
+    // Fields
+    const statesStr = getVal("licensed states");
+    const states = statesStr
+      ? statesStr.split(/[,;]+/).map(s => s.trim().toUpperCase()).filter(Boolean)
+      : [];
+
+    const insStr = getVal("insurance");
+    const insurersNorm = insStr
+      ? insStr.split(/[,;]+/).map(s => normIns(s)).filter(Boolean)
+      : [];
+
+    const email = getVal("email") || "";
+    const languagesStr = getVal("languages");
+    const languages = languagesStr
+      ? languagesStr.split(/[,;]+/).map(s => s.trim()).filter(Boolean)
+      : [];
+
+    if (id && namePart){
+      out.push({
+        id,
+        name: namePart,
+        role,                 // "therapist" | "psychiatrist"
+        insurers: insurersNorm, // ["bcbs","aetna",...]
+        states,               // ["AZ","NM",...]
+        email,
+        languages
+      });
+    }
+  }
+  return out;
 }
 
+// Schedule still line-based: id|YYYY-MM-DD|HH:MM
 function parseSchedule(txt){
   if (!txt) return [];
   return txt.trim().split(/\r?\n/).map(line => {
-    // Format: id|YYYY-MM-DD|HH:MM
     const [id, date, time] = (line||"").split("|");
     return { id: (id||"").trim(), date: (date||"").trim(), time: (time||"").trim() };
   }).filter(s => s.id && s.date && s.time);
@@ -92,36 +173,34 @@ function parseSchedule(txt){
 
 function normIns(s){
   if (!s) return "";
-  const x = s.toLowerCase();
-  if (/(bcbs|blue\s*cross)/i.test(s)) return "bcbs";
-  if (/aetna/i.test(s)) return "aetna";
-  if (/cigna/i.test(s)) return "cigna";
-  if (/(uhc|united)/i.test(s)) return "uhc";
-  if (/medicare/i.test(s)) return "medicare";
-  if (/medicaid|ahcccs/i.test(s)) return "medicaid";
+  const x = s.toLowerCase().trim();
+  if (/bcbs|blue\s*cross/.test(x)) return "bcbs";
+  if (/aetna/.test(x)) return "aetna";
+  if (/cigna/.test(x)) return "cigna";
+  if (/uhc|united/.test(x)) return "uhc";
+  if (/medicare/.test(x)) return "medicare";
+  if (/medicaid|ahcccs/.test(x)) return "medicaid";
+  if (/humana/.test(x)) return "humana";
   return x.replace(/\s+/g,"");
 }
 
 function matchProviders({ state, insurer, role }){
-  const wantRole = (role||"").toLowerCase();   // "therapist" | "psychiatrist" | ""
-  const wantIns  = normIns(insurer);
-  const wantSt   = (state||"").toUpperCase();
+  const wantRole = (role||"").toLowerCase();       // "therapist" | "psychiatrist" | ""
+  const wantIns  = normIns(insurer);               // e.g., "bcbs"
+  const wantSt   = (state||"").toUpperCase();      // e.g., "AZ"
 
-  // In-network prioritized
-  let list = PROVIDERS.filter(p =>
+  const inNet = PROVIDERS.filter(p =>
     (!wantRole || p.role === wantRole) &&
-    (!wantSt   || p.state === wantSt) &&
-    (!wantIns  || p.insurers.includes(wantIns))
+    (!wantSt   || (Array.isArray(p.states) && p.states.includes(wantSt))) &&
+    (!wantIns  || (Array.isArray(p.insurers) && p.insurers.includes(wantIns)))
   );
+  if (inNet.length) return inNet;
 
-  // If none, relax insurer but keep role/state
-  if (!list.length && (wantRole || wantSt)) {
-    list = PROVIDERS.filter(p =>
-      (!wantRole || p.role === wantRole) &&
-      (!wantSt   || p.state === wantSt)
-    );
-  }
-  return list;
+  // fallback: relax insurer but keep role/state
+  return PROVIDERS.filter(p =>
+    (!wantRole || p.role === wantRole) &&
+    (!wantSt   || (Array.isArray(p.states) && p.states.includes(wantSt)))
+  );
 }
 
 // Date-only future check (timezone-agnostic)
@@ -178,24 +257,24 @@ const looksLikeOpener = (txt) =>
 function extractUserInfo(normalizedHistory, userMessage){
   const transcriptWindow = [...normalizedHistory.map(m => m.content), userMessage].join(" ").toLowerCase();
 
-  const INS_PAT = /\b(bcbs|blue\s*cross|bluecross|aetna|cigna|uhc|united\s*healthcare|kaiser|medicare|medicaid|tricare|ambetter|ahcccs)\b/i;
+  const INS_PAT = /\b(bcbs|blue\s*cross|bluecross|aetna|cigna|uhc|united\s*healthcare|kaiser|medicare|medicaid|tricare|ambetter|ahcccs|humana)\b/i;
   const insMatch = transcriptWindow.match(INS_PAT);
   const insuranceDetected = insMatch ? insMatch[1].toUpperCase().replace(/\s+/g," ") : "";
 
-  const ZIP_PAT = /\b\d{5}\b/;
-  const CITY_PAT = /\b(phoenix|scottsdale|tempe|mesa|chandler|glendale|tucson|flagstaff|yuma|peoria|gilbert)\b/i;
-  const zipDetected = (transcriptWindow.match(ZIP_PAT) || [])[0] || "";
-  const cityDetected = (transcriptWindow.match(CITY_PAT) || [])[0] || "";
-
-  const STATE_PAT = /\b(arizona|az)\b/i;
-  const stateDetected = STATE_PAT.test(transcriptWindow) ? "AZ" : "";
+  const STATE_PAT = /\b(arizona|az|new mexico|nm|colorado|co|nevada|nv|oregon|or|new york|ny)\b/i;
+  let stateDetected = "";
+  const m = transcriptWindow.match(STATE_PAT);
+  if (m) {
+    const raw = m[0].toLowerCase();
+    const map = { "arizona":"AZ","az":"AZ","new mexico":"NM","nm":"NM","colorado":"CO","co":"CO","nevada":"NV","nv":"NV","oregon":"OR","or":"OR","new york":"NY","ny":"NY" };
+    stateDetected = map[raw] || "";
+  }
 
   const wantsList = /\b(list|show)\b.+\bproviders?\b|\bproviders?\b.*\b(do you have|what|which)\b|^providers?$/i.test(transcriptWindow);
-
   const wantsPsych = /\bpsychiat(ry|rist)?\b/i.test(transcriptWindow) || /\bmeds?|medication\b/i.test(transcriptWindow) || /\bboth\b/i.test(transcriptWindow);
   const wantsTher  = /\btherap(y|ist)\b/i.test(transcriptWindow) || /\bboth\b/i.test(transcriptWindow);
 
-  return { insuranceDetected, zipDetected, cityDetected, stateDetected, wantsList, wantsPsych, wantsTher };
+  return { insuranceDetected, stateDetected, wantsList, wantsPsych, wantsTher };
 }
 
 // ---------------------------- AOAI helper ----------------------------
@@ -253,12 +332,11 @@ module.exports = async function (context, req){
 # Retrieved context (for your internal grounding; summarize if used):
 ${bullets}`;
       }
-    } catch { /* retrieval optional */ }
+    } catch { /* optional */ }
 
     // Facts from convo
-    const {
-      insuranceDetected, stateDetected, wantsList, wantsPsych, wantsTher
-    } = extractUserInfo(normalizedHistory, userMessage);
+    const { insuranceDetected, stateDetected, wantsList, wantsPsych, wantsTher } =
+      extractUserInfo(normalizedHistory, userMessage);
 
     const state   = stateDetected || "";
     const insurer = insuranceDetected || "";
@@ -284,7 +362,9 @@ ${bullets}`;
           const lines = matched.map(p => {
             const slot = (upcomingSlotsFor(p.id, 1)[0] || null);
             const slotStr = slot ? ` — soonest: ${slot.date} ${slot.time}` : "";
-            return `• ${p.name} — ${p.city}, ${p.state} — in-net: ${p.insurers.join(", ")}${slotStr}`;
+            const ins = (p.insurers && p.insurers.length) ? ` — in-net: ${p.insurers.join(", ")}` : "";
+            const lic = (p.states && p.states.length) ? ` — licensed: ${p.states.join(", ")}` : "";
+            return `• ${p.name}${lic}${ins}${slotStr}`;
           });
           sections.push(`${title}:\n${lines.join("\n")}`);
         }
@@ -307,9 +387,9 @@ ${bullets}`;
         const matched = matchProviders({ state, insurer, role }).slice(0, 3);
         if (matched.length){
           const title = role === "therapist" ? "Therapists" : "Psychiatrists";
-          const lines = matched.map(p => {
-            return `- ${p.name} (${p.role}), ${p.city}, ${p.state}; in-net: ${p.insurers.slice(0,2).join(", ")}`;
-          }).join("\n");
+          const lines = matched.map(p =>
+            `- ${p.name} (${p.role}); licensed: ${p.states?.join(", ") || "n/a"}; in-net: ${(p.insurers||[]).slice(0,2).join(", ")}`
+          ).join("\n");
           sections.push(`${title} (use only these; do NOT invent):\n${lines}`);
         }
       }
@@ -427,7 +507,6 @@ Known facts this turn: ${facts || "none"}.`;
 
     context.res = { status:200, headers:{ "Content-Type":"application/json" }, body:{ reply } };
   } catch(e){
-    // Always JSON (avoid HTML/hex)
     context.res = { status:500, headers:{ "Content-Type":"application/json" }, body:{ error:"server error", detail:String(e) } };
   }
 };
