@@ -2,10 +2,10 @@
 const fs = require("fs");
 const path = require("path");
 
-// ---------- DISPLAY SETTINGS ----------
-const SHOW_SLOTS_DEFAULT  = 3;   // shortlist per provider (concise)
-const SHOW_SLOTS_PROVIDER = 8;   // when user mentions provider/later/3pm
-const TZ_REGION = "America/Phoenix"; // all time logic uses Phoenix (no DST)
+// ---------- DISPLAY / TIME SETTINGS ----------
+const SHOW_SLOTS_DEFAULT  = 3;   // shortlist per provider for general suggestions
+const SHOW_SLOTS_PROVIDER = 8;   // when focusing one provider (later/more/specific)
+const TZ_REGION = "America/Phoenix"; // treat all slot comparisons in Phoenix time
 
 // ---------- CACHED FILE CONTENT ----------
 let SYS_PROMPT = "", FAQ_SNIPPET = "", POLICIES_SNIPPET = "";
@@ -13,6 +13,7 @@ let PROVIDERS_TXT = "", PROVIDER_SCHEDULE_TXT = "";
 let PROVIDERS = [];     // [{ id, name, role, is_prescriber, states[], insurers[], raw }]
 let SLOTS = [];         // [{ id, date, time }]
 let NAME_INDEX = null;  // token -> Set<prov_id>
+let NAME_MAPS = null;   // { full: Map<string, prov_id>, last: Map<string, Set<prov_id>> }
 
 function readIfExists(p){ try{ return fs.readFileSync(p,"utf8"); } catch{ return ""; } }
 
@@ -58,6 +59,7 @@ ${POLICIES_SNIPPET}`.trim();
   PROVIDERS = parseProvidersFreeform(PROVIDERS_TXT);
   SLOTS     = parseSlots(PROVIDER_SCHEDULE_TXT);
   NAME_INDEX = buildProviderNameIndex(PROVIDERS);
+  NAME_MAPS  = buildNameMaps(PROVIDERS);
 }
 
 // ---------- PARSERS ----------
@@ -114,7 +116,43 @@ function parseSlots(txt){
   }).filter(s => s.id && s.date && s.time);
 }
 
-// ---------- TIME & PAGING HELPERS (Arizona time) ----------
+// ---------- NAME MAPS ----------
+function buildProviderNameIndex(list){
+  const idx = new Map();
+  for (const p of list){
+    const parts = (p.name || "").toLowerCase().split(/\s+/).filter(Boolean);
+    const uniq = new Set(parts);
+    for (const t of uniq){
+      if (!idx.has(t)) idx.set(t, new Set());
+      idx.get(t).add(p.id);
+    }
+    const last = parts[parts.length - 1];
+    if (last) {
+      if (!idx.has(last)) idx.set(last, new Set());
+      idx.get(last).add(p.id);
+    }
+  }
+  return idx;
+}
+
+function buildNameMaps(list){
+  const full = new Map();   // "anna henderson" -> "prov_096"
+  const last = new Map();   // "henderson" -> Set("prov_003","prov_031","prov_048","prov_096")
+  for (const p of list){
+    const normFull = (p.name || "").toLowerCase().replace(/\s+/g, " ").trim();
+    if (normFull) full.set(normFull, p.id);
+
+    const parts = normFull.split(" ");
+    const ln = parts[parts.length - 1];
+    if (ln){
+      if (!last.has(ln)) last.set(ln, new Set());
+      last.get(ln).add(p.id);
+    }
+  }
+  return { full, last };
+}
+
+// ---------- TIME HELPERS (Arizona time) ----------
 function getNowKeyTZ(tz = TZ_REGION) {
   const fmt = new Intl.DateTimeFormat("en-CA", {
     timeZone: tz, year: "numeric", month: "2-digit", day: "2-digit",
@@ -126,24 +164,6 @@ function getNowKeyTZ(tz = TZ_REGION) {
   return { date, time, key: `${date}${time}` };
 }
 function keyFrom(date, time) { return `${date}${time}`; }
-
-function wantsMoreSlots(text){
-  return /\b(more|more times|more options|later|another day|next week|next|later in (the )?month)\b/i.test(text||"");
-}
-
-function inferLastShownKeyFromHistory(history){
-  const lastA = [...history].reverse().find(m => m.role === "assistant")?.content || "";
-  // Try ISO-like first: "2025-09-23 13:00"
-  const m1 = lastA.match(/(\d{4}-\d{2}-\d{2})\s+(\d{2}):(\d{2})/);
-  if (m1) return `${m1[1]}${m1[2]}:${m1[3]}`;
-  // Fallback: last ISO-looking in the message, if any
-  const mAll = [...lastA.matchAll(/(\d{4}-\d{2}-\d{2})\s+(\d{2}):(\d{2})/g)];
-  if (mAll.length) {
-    const last = mAll[mAll.length-1];
-    return `${last[1]}${last[2]}:${last[3]}`;
-  }
-  return "";
-}
 
 // ---------- SLOT UTILITIES (READ ALL, SHOW FEW, FUTURE-ONLY) ----------
 function soonestSlotsFor(id, limit = SHOW_SLOTS_DEFAULT){
@@ -196,42 +216,6 @@ function matchProviders({ state, insurer, role }){
   return list;
 }
 
-// ---------- NAME INDEX ----------
-function buildProviderNameIndex(list){
-  const idx = new Map();
-  for (const p of list){
-    const parts = (p.name || "").toLowerCase().split(/\s+/).filter(Boolean);
-    const uniq = new Set(parts);
-    for (const t of uniq){
-      if (!idx.has(t)) idx.set(t, new Set());
-      idx.get(t).add(p.id);
-    }
-    const last = parts[parts.length - 1];
-    if (last) {
-      if (!idx.has(last)) idx.set(last, new Set());
-      idx.get(last).add(p.id);
-    }
-  }
-  return idx;
-}
-
-function detectProviderMention(userText, nameIndex){
-  const toks = (userText||"").toLowerCase().match(/[a-z]+/g) || [];
-  const tallies = new Map();
-  for (const t of toks){
-    const set = nameIndex.get(t);
-    if (!set) continue;
-    for (const id of set){
-      tallies.set(id, (tallies.get(id)||0) + 1);
-    }
-  }
-  let best = "", score = 0;
-  for (const [id, s] of tallies.entries()){
-    if (s > score){ best = id; score = s; }
-  }
-  return best; // "" if none
-}
-
 // ---------- OPTIONAL AZURE AI SEARCH ----------
 async function querySearch(q){
   const endpoint = ((process.env.AZURE_SEARCH_ENDPOINT||"")+"").trim().replace(/\/+$/,"");
@@ -266,7 +250,7 @@ async function querySearch(q){
   return items.slice(0,3);
 }
 
-// ---------- STATE / INTENT ----------
+// ---------- STATE NORMALIZATION ----------
 const US_STATES = {
   AL:"AL","Alabama":"AL", AK:"AK","Alaska":"AK", AZ:"AZ","Arizona":"AZ", AR:"AR","Arkansas":"AR",
   CA:"CA","California":"CA", CO:"CO","Colorado":"CO", CT:"CT","Connecticut":"CT",
@@ -307,7 +291,7 @@ function detectStatesIn(text=""){
     const code = normalizeStateToken(t);
     if (code) found.add(code);
   }
-  const l = text.toLowerCase();
+  const l = (text||"").toLowerCase();
   for (const phrase of multi){
     if (l.includes(phrase)) {
       const title = phrase.replace(/\b\w/g, m=>m.toUpperCase());
@@ -317,74 +301,91 @@ function detectStatesIn(text=""){
   return [...found];
 }
 
-function extractUserInfo(normalizedHistory, userMessage){
-  const historyText = normalizedHistory.map(m => m.content).join(" ");
-  const transcriptWindow = (historyText + " " + userMessage).toLowerCase();
-
-  const INS_PAT = /\b(bcbs|blue\s*cross|bluecross|aetna|cigna|uhc|united\s*healthcare|kaiser|medicare|medicaid|ahcccs|tricare|humana|cash\s*pay|cashpay)\b/i;
-  const insMatch = transcriptWindow.match(INS_PAT);
-  const insuranceDetected = insMatch ? insMatch[1].toUpperCase().replace(/\s+/g," ") : "";
-
-  const historyStates = detectStatesIn(historyText);
-  const userStates    = detectStatesIn(userMessage);
-
-  let stateDetected = "";
-  if (userStates.length) stateDetected = userStates[userStates.length - 1];
-  else if (historyStates.length) stateDetected = historyStates[historyStates.length - 1];
-
-  const wantsList = /\b(list|show|options?|suggest(ions?)?)\b.*\bproviders?\b/i.test(userMessage) ||
-                    /\bwho (do|does) you have\b/i.test(userMessage);
-
-  return { insuranceDetected, stateDetected, wantsList };
-}
-
-// ---------- CONVO HEURISTICS ----------
+// ---------- CONVO HEURISTICS (simple) ----------
 const looksLikeOpener = (txt) =>
   /can you (share|tell)|what’s been going on|how (has|is) that|can you say more/i.test((txt||""));
 
-function parseTimeRequest(text){
-  const m = (text||"").toLowerCase().match(/\b(\d{1,2})(?::?(\d{2}))?\s*(am|pm)?\b/);
-  if (!m) return null;
-  let hh = parseInt(m[1], 10);
-  const mm = m[2] ? m[2] : "00";
-  const ampm = m[3];
-  if (ampm === "pm" && hh < 12) hh += 12;
-  if (ampm === "am" && hh === 12) hh = 0;
-  if (hh >= 0 && hh <= 23){
-    const HH = String(hh).padStart(2,"0");
-    return `${HH}:${mm}`;
+function inferLastShownKeyFromHistory(history){
+  const lastA = [...history].reverse().find(m => m.role === "assistant")?.content || "";
+  const m1 = lastA.match(/(\d{4}-\d{2}-\d{2})\s+(\d{2}):(\d{2})/);
+  if (m1) return `${m1[1]}${m1[2]}:${m1[3]}`;
+  const mAll = [...lastA.matchAll(/(\d{4}-\d{2}-\d{2})\s+(\d{2}):(\d{2})/g)];
+  if (mAll.length) {
+    const last = mAll[mAll.length-1];
+    return `${last[1]}${last[2]}:${last[3]}`;
   }
-  return null;
+  return "";
 }
 
-function mentionsLater(text){
-  return /\b(later|another day|next week|after|evening|later in the month|later this month)\b/i.test(text||"");
+// ---------- PROVIDER IDENTIFICATION (no keyword triggers; used for fallback) ----------
+function detectProviderMention(userText, providers, nameMaps){
+  const txt = (userText||"").toLowerCase();
+  // 1) Full name exact
+  for (const p of providers){
+    const full = p.name.toLowerCase().replace(/\s+/g," ").trim();
+    if (full && txt.includes(full)) return p.id;
+  }
+  // 2) Last name (ambiguous)
+  const lastTokens = (txt.match(/[a-z]+/g) || []);
+  for (const token of lastTokens){
+    const ids = nameMaps.last.get(token);
+    if (ids && ids.size === 1) return [...ids][0];
+    if (ids && ids.size > 1) return [...ids]; // candidate list
+  }
+  return "";
 }
 
-// Infer active provider from recent turns so user doesn't have to repeat the name
-function inferCurrentProviderFromHistory(history, providers){
-  const lastFew = [...history].slice(-6);
-  const lastA = [...lastFew].reverse().find(m => m.role === 'assistant')?.content || "";
-  const lastU = [...lastFew].reverse().find(m => m.role === 'user')?.content || "";
+function resolveProviderCandidates(candidates, { state, insurer, role }, providers){
+  if (!Array.isArray(candidates) || candidates.length === 0) return "";
+  let list = providers.filter(p => candidates.includes(p.id));
+  if (role)    list = list.filter(p => (role === "psychiatrist" ? p.is_prescriber : p.role === role));
+  if (state)   list = list.filter(p => (p.states||[]).includes(state));
+  if (insurer) list = list.filter(p => (p.insurers||[]).includes((insurer||"").toLowerCase()));
 
-  // Prefer explicit last-name by the user
+  if (!list.length) list = providers.filter(p => candidates.includes(p.id));
+
+  const nowKey = getNowKeyTZ().key;
+  list.sort((a,b) => {
+    const aFirst = SLOTS.find(s => s.id === a.id && keyFrom(s.date,s.time) >= nowKey);
+    const bFirst = SLOTS.find(s => s.id === b.id && keyFrom(s.date,s.time) >= nowKey);
+    const ak = aFirst ? keyFrom(aFirst.date,aFirst.time) : "9999-99-99ZZ:ZZ";
+    const bk = bFirst ? keyFrom(bFirst.date,bFirst.time) : "9999-99-99ZZ:ZZ";
+    return ak.localeCompare(bk);
+  });
+  return list[0]?.id || "";
+}
+
+function inferCurrentProviderFromHistory(history, providers, nameMaps, constraints){
+  const lastFew = [...history].slice(-8);
+  const lastA = [...lastFew].reverse().find(m => m.role === 'assistant')?.content?.toLowerCase() || "";
+  const lastU = [...lastFew].reverse().find(m => m.role === 'user')?.content?.toLowerCase() || "";
+
+  // Full-name in last turns
   for (const p of providers){
-    const last = (p.name.split(/\s+/).pop() || "").replace(/[^A-Za-z]/g,"");
-    if (!last) continue;
-    const re = new RegExp(`\\b${last}\\b`, "i");
-    if (re.test(lastU)) return p.id;
+    const full = p.name.toLowerCase().replace(/\s+/g," ").trim();
+    if (full && (lastU.includes(full) || lastA.includes(full))) return p.id;
   }
 
-  // Else, if assistant last suggested a single provider, grab that
-  const hits = [];
-  for (const p of providers){
-    const last = (p.name.split(/\s+/).pop() || "").replace(/[^A-Za-z]/g,"");
-    if (!last) continue;
-    const re = new RegExp(`\\b${last}\\b`, "i");
-    if (re.test(lastA)) hits.push(p.id);
+  // Last-name in user turn
+  const userMention = detectProviderMention(lastU, providers, nameMaps);
+  if (Array.isArray(userMention)) {
+    const resolved = resolveProviderCandidates(userMention, constraints, providers);
+    if (resolved) return resolved;
+  } else if (userMention) {
+    return userMention;
   }
-  if (hits.length === 1) return hits[0];
 
+  // Last-name in assistant turn
+  const tokens = (lastA.match(/[a-z]+/g) || []);
+  const candidates = new Set();
+  for (const t of tokens){
+    const ids = nameMaps.last.get(t);
+    if (ids) ids.forEach(id => candidates.add(id));
+  }
+  if (candidates.size) {
+    const resolved = resolveProviderCandidates([...candidates], constraints, providers);
+    if (resolved) return resolved;
+  }
   return "";
 }
 
@@ -398,6 +399,37 @@ async function callAOAI(url, messages, temperature, maxTokens, apiKey){
   const ct = resp.headers.get("content-type") || "";
   const data = ct.includes("application/json") ? await resp.json() : { text: await resp.text() };
   return { resp, data };
+}
+
+// ---------- PLANNER PASS ----------
+const PLANNER_INSTRUCTIONS = `
+You are the Planner. Output ONLY a compact JSON object (no prose) matching this schema:
+{
+  "role": "psychiatrist" | "therapist" | "both" | null,
+  "state": "<US-STATE-CODE or null>",
+  "insurer": "<normalized insurer or 'cashpay' or null>",
+  "provider_id": "<prov_xxx or null>",
+  "availability_action": "initial" | "more" | "later" | "specific" | null,
+  "time_pref": "<24h HH:MM or null>",
+  "top_k_providers": 6,
+  "per_provider_slots": 3,
+  "provider_page_slots": 8
+}
+
+Guidelines:
+- Infer role from goals; "both" if the person wants both or it's ambiguous.
+- Infer state/insurer from conversation context if present; else null.
+- provider_id only if clearly referenced or inferable from recent turns.
+- availability_action:
+  * "initial"   when a fresh shortlist is appropriate (default).
+  * "more"      when the user requests more options/times broadly.
+  * "later"     when the user requests later dates than previously shown.
+  * "specific"  when the user expresses a specific time preference (e.g., "3pm").
+- time_pref only for "specific" (24h format).
+- Return valid JSON only.`;
+
+function safeParseJSON(s){
+  try { return JSON.parse(s); } catch { return null; }
 }
 
 // ---------- MAIN HANDLER ----------
@@ -428,7 +460,7 @@ module.exports = async function (context, req){
     }
     const url = `${endpoint}/openai/deployments/${deployment}/chat/completions?api-version=${apiVersion}`;
 
-    // Optional search
+    // Optional search (leave as-is)
     let contextBlock = "";
     let searchItems = [];
     const lastUser = (normalizedHistory.slice().reverse().find(m => m.role==='user') || {}).content || "";
@@ -442,48 +474,63 @@ module.exports = async function (context, req){
 ${bullets}`;
     }
 
-    // Extract basics
-    const { insuranceDetected, stateDetected, wantsList } =
-      extractUserInfo(normalizedHistory, userMessage);
+    // ---- PLANNER PASS (semantic; no keyword triggers) ----
+    const plannerMessages = [
+      { role: "system", content: PLANNER_INSTRUCTIONS },
+      ...normalizedHistory.slice(-10), // light context
+      { role: "user", content: userMessage }
+    ];
+    const { resp: planResp, data: planData } = await callAOAI(url, plannerMessages, 0.2, 512, apiKey);
+    let planText = (planData?.choices?.[0]?.message?.content || "").trim();
+    let plan = safeParseJSON(planText) || {
+      role: null, state: null, insurer: null, provider_id: null,
+      availability_action: "initial", time_pref: null,
+      top_k_providers: 6, per_provider_slots: 3, provider_page_slots: 8
+    };
 
-    const insurer = (insuranceDetected || "").toLowerCase();
-    const state   = stateDetected || "";
+    // Normalize inferred constraints
+    const inferredRole    = plan.role;            // "psychiatrist"|"therapist"|"both"|null
+    const inferredState   = plan.state || "";
+    const inferredInsurer = plan.insurer || "";   // "bcbs","uhc","cashpay",...
 
-    const userExplicitlyAsked = !!wantsList;
-    const haveEnoughToMatch   = !!state;
-    const shouldShowDirectory = userExplicitlyAsked || haveEnoughToMatch;
+    // If planner didn't set provider, try resolving from recent turns (semantic fallback)
+    const constraints = {
+      state: inferredState,
+      insurer: inferredInsurer,
+      role: inferredRole === "both" ? "" : inferredRole
+    };
+    let activeProvId = plan.provider_id || inferCurrentProviderFromHistory(normalizedHistory, PROVIDERS, NAME_MAPS, constraints);
 
-    // Provider/time intents
-    const mentionedId = detectProviderMention(userMessage, NAME_INDEX);
-    const inferredId  = inferCurrentProviderFromHistory(normalizedHistory, PROVIDERS);
-    const activeProvId = mentionedId || inferredId;
+    // ---- SHORTLIST SECTION (read all, show few) ----
+    const rolesToShow = inferredRole === "both"
+      ? ["psychiatrist","therapist"]
+      : inferredRole ? [inferredRole] : ["psychiatrist","therapist"];
 
-    const hhmmReq     = parseTimeRequest(userMessage);
-    const wantsLater  = mentionsLater(userMessage);
-    const wantsMore   = wantsMoreSlots(userMessage);
-    const lastShownKey = wantsMore ? inferLastShownKeyFromHistory(normalizedHistory) : "";
-
-    // Build shortlist directory (show few slots per provider)
     let directoryContext = "";
-    if (shouldShowDirectory && PROVIDERS.length){
-      const roles = ["psychiatrist","therapist"];
+    if (PROVIDERS.length){
       const sections = [];
-      const perProviderShow = wantsMore ? Math.max(SHOW_SLOTS_DEFAULT, 5) : SHOW_SLOTS_DEFAULT;
 
-      for (const role of roles){
-        const matched = matchProviders({ state, insurer, role }).slice(0, 6);
+      for (const role of rolesToShow){
+        const matched = matchProviders({
+          state: inferredState,
+          insurer: inferredInsurer,
+          role
+        }).slice(0, Math.max(3, plan.top_k_providers || 6));
+
         if (matched.length){
           const lines = matched.map(p => {
-            const slotStr = soonestSlotsFor(p.id, perProviderShow)
+            const perProv = Math.max(2, plan.per_provider_slots || SHOW_SLOTS_DEFAULT);
+            const slots = soonestSlotsFor(p.id, perProv)
               .map(s => `${s.date} ${s.time}`).join(", ");
-            const ins   = (p.insurers||[]).join(", ") || "cashpay";
-            const stStr = p.states?.join(", ") || "";
-            return `- ${p.name} (${role}) — licensed: ${stStr} — in-net: ${ins}${slotStr?` — soonest: ${slotStr}`:""}`;
+            const ins   = (p.insurers || []).join(", ") || "cashpay";
+            const stStr = (p.states || []).join(", ");
+            return `- ${p.name} (${role}) — licensed: ${stStr} — in-net: ${ins}${slots?` — soonest: ${slots}`:""}`;
           }).join("\n");
           const title = role === "therapist" ? "Therapists" : "Psychiatrists";
-          sections.push(`${title} (state=${state || "unspecified"}${insurer?`, insurer=${insurer}`:""}):\n${lines}`);
+          sections.push(`${title} (state=${inferredState || "unspecified"}${inferredInsurer?`, insurer=${inferredInsurer}`:""}):\n${lines}`);
         }
       }
+
       if (sections.length){
         directoryContext = `
 
@@ -492,16 +539,17 @@ ${sections.join("\n\n")}`;
       }
     }
 
-    // Provider-specific availability: expand calendar when user asks "later/3pm/more"
+    // ---- AVAILABILITY SECTION (focus one provider based on plan) ----
     let providerAvailabilityContext = "";
     if (activeProvId){
       const prov = PROVIDERS.find(p => p.id === activeProvId);
-      if (prov && (hhmmReq || wantsLater || wantsMore || mentionedId)){
-        const PAGE_LIMIT = wantsMore ? 12 : SHOW_SLOTS_PROVIDER;
+      if (prov){
+        const lastShownKey = inferLastShownKeyFromHistory(normalizedHistory);
+        const PAGE_LIMIT = Math.max(3, plan.provider_page_slots || SHOW_SLOTS_PROVIDER);
         let lines = [];
 
-        if (hhmmReq){
-          const exact = findSlotsAtTime(activeProvId, hhmmReq, lastShownKey);
+        if (plan.availability_action === "specific" && plan.time_pref){
+          const exact = findSlotsAtTime(activeProvId, plan.time_pref, lastShownKey);
           if (exact.length){
             lines = exact.slice(0, PAGE_LIMIT).map(s => `- ${s.date} ${s.time}`);
           } else {
@@ -509,10 +557,10 @@ ${sections.join("\n\n")}`;
             const near = nearestNextSlots(activeProvId, anchor, PAGE_LIMIT);
             lines = near.map(s => `- ${s.date} ${s.time}`);
           }
-        } else if (wantsLater || wantsMore){
+        } else if (plan.availability_action === "later" || plan.availability_action === "more"){
           const next = upcomingSlotsFor(activeProvId, lastShownKey).slice(0, PAGE_LIMIT);
           lines = next.map(s => `- ${s.date} ${s.time}`);
-        } else if (mentionedId){
+        } else {
           lines = soonestSlotsFor(activeProvId, PAGE_LIMIT).map(s => `- ${s.date} ${s.time}`);
         }
 
@@ -520,13 +568,13 @@ ${sections.join("\n\n")}`;
           providerAvailabilityContext = `
 # Availability (exact; do not invent)
 Provider: ${prov.name} (${prov.role})
-Slots (future only):
+Slots (future only, ${TZ_REGION}):
 ${lines.join("\n")}`.trim();
         }
       }
     }
 
-    // Build messages
+    // ---- Compose final messages (responder pass) ----
     const messages = [
       { role:"system", content:
           (SYS_PROMPT || "You are a helpful intake assistant.") +
@@ -542,7 +590,7 @@ ${lines.join("\n")}`.trim();
     const requestedMax = Number.isFinite(req.body?.max_output_tokens) ? req.body.max_output_tokens : 0;
     const maxTokens = Math.max(requestedMax || 0, 2048);
 
-    // Call model
+    // Call model (responder)
     let { resp, data } = await callAOAI(url, messages, 1, maxTokens, apiKey);
     const choice = data?.choices?.[0];
     let reply  = (choice?.message?.content || "").trim();
@@ -564,8 +612,8 @@ ${lines.join("\n")}`.trim();
       const styles = ["warm-brief", "reassuring-practical", "concise-direct"];
       const styleTag = styles[Math.floor(Math.random() * styles.length)];
       const facts = [
-        insurer ? `insurance: ${insurer}` : null,
-        state   ? `state: ${state}`       : null
+        inferredInsurer ? `insurance: ${inferredInsurer}` : null,
+        inferredState   ? `state: ${inferredState}`       : null
       ].filter(Boolean).join("; ");
 
       const styleNudge = `
@@ -602,7 +650,7 @@ Known facts this turn: ${facts || "none"}.`;
       return;
     }
 
-    // Debug mode
+    // Debug
     if (req.query?.debug === "1"){
       context.res = { status:200, headers:{ "Content-Type":"application/json" }, body:{
         reply,
@@ -623,15 +671,9 @@ Known facts this turn: ${facts || "none"}.`;
           slotPath: path.join(__dirname, "../_data/provider_schedule_14d.txt"),
           slotExists: !!PROVIDER_SCHEDULE_TXT
         },
-        selected_state: state,
-        selected_insurer: insurer,
-        mentioned_provider_id: mentionedId,
-        inferred_provider_id: inferredId,
+        planner_raw: planText,
+        planner: plan,
         active_provider_id: activeProvId,
-        time_requested: hhmmReq,
-        wants_later: wantsLater,
-        wants_more: wantsMore,
-        last_shown_key: lastShownKey,
         search_used: !!searchItems.length,
         search_items: searchItems,
         history_len: normalizedHistory.length
