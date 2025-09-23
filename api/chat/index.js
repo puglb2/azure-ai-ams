@@ -77,9 +77,14 @@ function inferRoleFromHeader(headerLine){
 function normalizeIns(ins){
   if (!ins) return "";
   const s = ins.toLowerCase().replace(/\s+/g,"");
-  if (/(bcbs|bluecross|bluecrossblueshield)/.test(s)) return "bcbs";
+  if (/bluecross|bluecrossblueshield|bcbs/.test(s)) return "bcbs";
   if (/unitedhealthcare|uhc/.test(s)) return "uhc";
-  if (/cashpay|cash/.test(s)) return "cashpay";
+  if (/aetna/.test(s)) return "aetna";
+  if (/cigna/.test(s)) return "cigna";
+  if (/medicare/.test(s)) return "medicare";
+  if (/medicaid/.test(s)) return "medicaid";
+  if (/humana/.test(s)) return "humana";
+  if (/cash|cashpay|selfpay|self\-pay|privatepay/.test(s)) return "cashpay";
   return s;
 }
 
