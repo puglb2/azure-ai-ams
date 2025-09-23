@@ -2,17 +2,17 @@
 const fs = require("fs");
 const path = require("path");
 
-// ---------- config: how many slots to SHOW by default ----------
-const SHOW_SLOTS_DEFAULT = 3;     // shortlist snippets
-const SHOW_SLOTS_PROVIDER = 6;    // when a specific provider is mentioned or "later/3pm" asked
+// ---------- DISPLAY SETTINGS ----------
+const SHOW_SLOTS_DEFAULT  = 3;   // shortlist per provider (concise)
+const SHOW_SLOTS_PROVIDER = 8;   // when user mentions provider/later/3pm
+const TZ_REGION = "America/Phoenix"; // all time logic uses Phoenix (no DST)
 
-// ---------- load & cache instruction + data files ----------
+// ---------- CACHED FILE CONTENT ----------
 let SYS_PROMPT = "", FAQ_SNIPPET = "", POLICIES_SNIPPET = "";
 let PROVIDERS_TXT = "", PROVIDER_SCHEDULE_TXT = "";
-
-let PROVIDERS = [];      // [{id,name,role,states[],insurers[],raw, is_prescriber}]
-let SLOTS = [];          // [{id,date,time}]
-let NAME_INDEX = null;   // token -> Set<prov_id>
+let PROVIDERS = [];     // [{ id, name, role, is_prescriber, states[], insurers[], raw }]
+let SLOTS = [];         // [{ id, date, time }]
+let NAME_INDEX = null;  // token -> Set<prov_id>
 
 function readIfExists(p){ try{ return fs.readFileSync(p,"utf8"); } catch{ return ""; } }
 
@@ -22,16 +22,16 @@ function initConfig(){
   const cfgDir  = path.join(__dirname, "../_config");
   const dataDir = path.join(__dirname, "../_data");
 
-  // Core instruction files
+  // Load instruction files
   SYS_PROMPT       = readIfExists(path.join(cfgDir, "system_prompt.txt")).trim();
   FAQ_SNIPPET      = readIfExists(path.join(cfgDir, "faqs.txt")).trim();
   POLICIES_SNIPPET = readIfExists(path.join(cfgDir, "policies.txt")).trim();
 
-  // Provider directory files (raw)
+  // Load data files
   PROVIDERS_TXT         = readIfExists(path.join(dataDir, "providers_100.txt")).trim();
   PROVIDER_SCHEDULE_TXT = readIfExists(path.join(dataDir, "provider_schedule_14d.txt")).trim();
 
-  // Merge FAQ and Policy snippets into system prompt
+  // Merge snippets into system prompt
   if (FAQ_SNIPPET) {
     SYS_PROMPT += `
 
@@ -54,19 +54,19 @@ ${POLICIES_SNIPPET}`.trim();
 - Routine help requests are not crisis; only explicit imminent risk is crisis.
 - Keep responses concise, natural, and varied. Plain text only.`;
 
-  // Parse providers + schedule into structured caches
+  // Parse directory + schedule
   PROVIDERS = parseProvidersFreeform(PROVIDERS_TXT);
   SLOTS     = parseSlots(PROVIDER_SCHEDULE_TXT);
   NAME_INDEX = buildProviderNameIndex(PROVIDERS);
 }
 
-// ---------- provider parsing + matching (FREEFORM FORMAT) ----------
+// ---------- PARSERS ----------
 function inferRoleFromHeader(headerLine){
-  // headerLine example: "Allison Hill (PsyD) — Therapy"
-  const roleTag = (headerLine.split("—")[1] || "").trim().toLowerCase(); // therapy|psychiatry|both
+  // e.g. "Allison Hill (PsyD) — Therapy"
+  const roleTag = (headerLine.split("—")[1] || "").trim().toLowerCase();
   const hasPrescriberCred = /\b(md|do|pmhnp)\b/i.test(headerLine);
   if (/psychiatry/.test(roleTag) && hasPrescriberCred) return { role: "psychiatrist", is_prescriber: true };
-  if (/psychiatry/.test(roleTag) && !hasPrescriberCred) return { role: "therapist", is_prescriber: false }; // safeguard
+  if (/psychiatry/.test(roleTag)) return { role: "therapist", is_prescriber: false };
   if (/both/.test(roleTag) && hasPrescriberCred) return { role: "psychiatrist", is_prescriber: true };
   if (/both/.test(roleTag)) return { role: "therapist", is_prescriber: false };
   return { role: "therapist", is_prescriber: false };
@@ -93,13 +93,12 @@ function parseProvidersFreeform(txt){
     const id = m[1];
     const header = (m[2] || "").trim(); // "<Name> — <Tag>"
     const name = (header.split("—")[0] || "").trim();
-
     const { role, is_prescriber } = inferRoleFromHeader(header);
 
     const statesLine   = (b.match(/Licensed states:\s*([^\n]+)/i)?.[1] || "").trim();
     const insurersLine = (b.match(/Insurance:\s*([^\n]+)/i)?.[1] || "").trim();
 
-    const states = statesLine.split(",").map(s=>s.trim().toUpperCase()).filter(Boolean);
+    const states   = statesLine.split(",").map(s=>s.trim().toUpperCase()).filter(Boolean);
     const insurers = insurersLine.split(",").map(s=>normalizeIns(s)).filter(Boolean);
 
     out.push({ id, name, role, is_prescriber, states, insurers, raw: b });
@@ -115,42 +114,70 @@ function parseSlots(txt){
   }).filter(s => s.id && s.date && s.time);
 }
 
-// ---------- slot helpers (SHOW few, READ all) ----------
-function soonestSlotsFor(id, limit=SHOW_SLOTS_DEFAULT){
+// ---------- TIME & PAGING HELPERS (Arizona time) ----------
+function getNowKeyTZ(tz = TZ_REGION) {
+  const fmt = new Intl.DateTimeFormat("en-CA", {
+    timeZone: tz, year: "numeric", month: "2-digit", day: "2-digit",
+    hour: "2-digit", minute: "2-digit", hour12: false
+  });
+  const parts = Object.fromEntries(fmt.formatToParts(new Date()).map(p => [p.type, p.value]));
+  const date = `${parts.year}-${parts.month}-${parts.day}`; // YYYY-MM-DD
+  const time = `${parts.hour}:${parts.minute}`;             // HH:MM
+  return { date, time, key: `${date}${time}` };
+}
+function keyFrom(date, time) { return `${date}${time}`; }
+
+function wantsMoreSlots(text){
+  return /\b(more|more times|more options|later|another day|next week|next|later in (the )?month)\b/i.test(text||"");
+}
+
+function inferLastShownKeyFromHistory(history){
+  const lastA = [...history].reverse().find(m => m.role === "assistant")?.content || "";
+  // Try ISO-like first: "2025-09-23 13:00"
+  const m1 = lastA.match(/(\d{4}-\d{2}-\d{2})\s+(\d{2}):(\d{2})/);
+  if (m1) return `${m1[1]}${m1[2]}:${m1[3]}`;
+  // Fallback: last ISO-looking in the message, if any
+  const mAll = [...lastA.matchAll(/(\d{4}-\d{2}-\d{2})\s+(\d{2}):(\d{2})/g)];
+  if (mAll.length) {
+    const last = mAll[mAll.length-1];
+    return `${last[1]}${last[2]}:${last[3]}`;
+  }
+  return "";
+}
+
+// ---------- SLOT UTILITIES (READ ALL, SHOW FEW, FUTURE-ONLY) ----------
+function soonestSlotsFor(id, limit = SHOW_SLOTS_DEFAULT){
+  const now = getNowKeyTZ(); // future-only
   return SLOTS
-    .filter(s => s.id === id)
-    .sort((a,b) => (a.date+a.time).localeCompare(b.date+b.time))
+    .filter(s => s.id === id && keyFrom(s.date, s.time) >= now.key)
+    .sort((a,b) => keyFrom(a.date,a.time).localeCompare(keyFrom(b.date,b.time)))
     .slice(0, limit);
 }
 
-function upcomingSlotsFor(id, fromDate=""){
-  const fromKey = (fromDate || "0000-00-00") + "00:00";
+function upcomingSlotsFor(id, fromKey = ""){
+  const anchor = fromKey || getNowKeyTZ().key;
   return SLOTS
-    .filter(s => s.id === id)
-    .sort((a,b) => (a.date+a.time).localeCompare(b.date+b.time))
-    .filter(s => (s.date+s.time) >= fromKey);
+    .filter(s => s.id === id && keyFrom(s.date, s.time) > anchor)
+    .sort((a,b) => keyFrom(a.date,a.time).localeCompare(keyFrom(b.date,b.time)));
 }
 
-// exact time across days (e.g., “3pm”)
-function findSlotsAtTime(id, hhmm="15:00", fromDate=""){
-  const fromKey = (fromDate || "0000-00-00") + hhmm;
+function findSlotsAtTime(id, hhmm = "15:00", fromKey = ""){
+  const anchor = fromKey || getNowKeyTZ().key;
   return SLOTS
-    .filter(s => s.id === id && s.time === hhmm)
-    .sort((a,b) => (a.date+a.time).localeCompare(b.date+b.time))
-    .filter(s => (s.date+s.time) >= fromKey);
+    .filter(s => s.id === id && s.time === hhmm && keyFrom(s.date, s.time) >= anchor)
+    .sort((a,b) => keyFrom(a.date,a.time).localeCompare(keyFrom(b.date,b.time)));
 }
 
-// closest future alternatives if exact time not available
-function nearestNextSlots(id, afterDateTimeKey, limit=SHOW_SLOTS_PROVIDER){
+function nearestNextSlots(id, afterKey, limit){
   return SLOTS
-    .filter(s => s.id === id && (s.date+s.time) > afterDateTimeKey)
-    .sort((a,b) => (a.date+a.time).localeCompare(b.date+b.time))
+    .filter(s => s.id === id && keyFrom(s.date, s.time) > afterKey)
+    .sort((a,b) => keyFrom(a.date,a.time).localeCompare(keyFrom(b.date,b.time)))
     .slice(0, limit);
 }
 
-// ---------- matching ----------
+// ---------- MATCHING ----------
 function matchProviders({ state, insurer, role }){
-  const wantRole = (role||"").toLowerCase();   // "therapist" | "psychiatrist" | ""
+  const wantRole = (role||"").toLowerCase();
   const wantIns  = (insurer||"").toLowerCase();
   const wantSt   = (state||"").toUpperCase();
 
@@ -160,7 +187,6 @@ function matchProviders({ state, insurer, role }){
     (!wantIns  || (p.insurers||[]).includes(wantIns))
   );
 
-  // If none, relax insurer but keep role/state
   if (!list.length && (wantRole || wantSt)) {
     list = PROVIDERS.filter(p =>
       (!wantRole || (p.role === wantRole || (wantRole==="psychiatrist" && p.is_prescriber))) &&
@@ -170,7 +196,7 @@ function matchProviders({ state, insurer, role }){
   return list;
 }
 
-// ---------- provider name index & detection ----------
+// ---------- NAME INDEX ----------
 function buildProviderNameIndex(list){
   const idx = new Map();
   for (const p of list){
@@ -206,7 +232,7 @@ function detectProviderMention(userText, nameIndex){
   return best; // "" if none
 }
 
-// ---------- Azure AI Search (optional grounding) ----------
+// ---------- OPTIONAL AZURE AI SEARCH ----------
 async function querySearch(q){
   const endpoint = ((process.env.AZURE_SEARCH_ENDPOINT||"")+"").trim().replace(/\/+$/,"");
   const key      = ((process.env.AZURE_SEARCH_KEY||"")+"").trim();
@@ -240,7 +266,7 @@ async function querySearch(q){
   return items.slice(0,3);
 }
 
-// ---------- state detection + intent gating ----------
+// ---------- STATE / INTENT ----------
 const US_STATES = {
   AL:"AL","Alabama":"AL", AK:"AK","Alaska":"AK", AZ:"AZ","Arizona":"AZ", AR:"AR","Arkansas":"AR",
   CA:"CA","California":"CA", CO:"CO","Colorado":"CO", CT:"CT","Connecticut":"CT",
@@ -295,35 +321,28 @@ function extractUserInfo(normalizedHistory, userMessage){
   const historyText = normalizedHistory.map(m => m.content).join(" ");
   const transcriptWindow = (historyText + " " + userMessage).toLowerCase();
 
-  // insurer (common variants)
   const INS_PAT = /\b(bcbs|blue\s*cross|bluecross|aetna|cigna|uhc|united\s*healthcare|kaiser|medicare|medicaid|ahcccs|tricare|humana|cash\s*pay|cashpay)\b/i;
   const insMatch = transcriptWindow.match(INS_PAT);
   const insuranceDetected = insMatch ? insMatch[1].toUpperCase().replace(/\s+/g," ") : "";
 
-  // states: latest mention wins; allow negation like "don't want AZ"
   const historyStates = detectStatesIn(historyText);
   const userStates    = detectStatesIn(userMessage);
-  const negAZ = /\b(don'?t|do not|no)\s+(want|use|choose).*\baz\b/i.test(userMessage);
 
   let stateDetected = "";
   if (userStates.length) stateDetected = userStates[userStates.length - 1];
   else if (historyStates.length) stateDetected = historyStates[historyStates.length - 1];
-  if (negAZ && stateDetected === "AZ") stateDetected = "";
 
-  // Intent: wants a list / options / suggestions now
   const wantsList = /\b(list|show|options?|suggest(ions?)?)\b.*\bproviders?\b/i.test(userMessage) ||
                     /\bwho (do|does) you have\b/i.test(userMessage);
 
   return { insuranceDetected, stateDetected, wantsList };
 }
 
-// detect “opener-ish” responses so we can nudge progress
+// ---------- CONVO HEURISTICS ----------
 const looksLikeOpener = (txt) =>
   /can you (share|tell)|what’s been going on|how (has|is) that|can you say more/i.test((txt||""));
 
-// ---------- provider/time intent helpers ----------
 function parseTimeRequest(text){
-  // matches: 3pm, 3 pm, 3:00 pm, 15:00
   const m = (text||"").toLowerCase().match(/\b(\d{1,2})(?::?(\d{2}))?\s*(am|pm)?\b/);
   if (!m) return null;
   let hh = parseInt(m[1], 10);
@@ -339,10 +358,37 @@ function parseTimeRequest(text){
 }
 
 function mentionsLater(text){
-  return /\b(later|another day|next week|after|evening)\b/i.test(text||"");
+  return /\b(later|another day|next week|after|evening|later in the month|later this month)\b/i.test(text||"");
 }
 
-// ---------- AOAI helper ----------
+// Infer active provider from recent turns so user doesn't have to repeat the name
+function inferCurrentProviderFromHistory(history, providers){
+  const lastFew = [...history].slice(-6);
+  const lastA = [...lastFew].reverse().find(m => m.role === 'assistant')?.content || "";
+  const lastU = [...lastFew].reverse().find(m => m.role === 'user')?.content || "";
+
+  // Prefer explicit last-name by the user
+  for (const p of providers){
+    const last = (p.name.split(/\s+/).pop() || "").replace(/[^A-Za-z]/g,"");
+    if (!last) continue;
+    const re = new RegExp(`\\b${last}\\b`, "i");
+    if (re.test(lastU)) return p.id;
+  }
+
+  // Else, if assistant last suggested a single provider, grab that
+  const hits = [];
+  for (const p of providers){
+    const last = (p.name.split(/\s+/).pop() || "").replace(/[^A-Za-z]/g,"");
+    if (!last) continue;
+    const re = new RegExp(`\\b${last}\\b`, "i");
+    if (re.test(lastA)) hits.push(p.id);
+  }
+  if (hits.length === 1) return hits[0];
+
+  return "";
+}
+
+// ---------- AOAI CALL ----------
 async function callAOAI(url, messages, temperature, maxTokens, apiKey){
   const resp = await fetch(url, {
     method:"POST",
@@ -354,7 +400,7 @@ async function callAOAI(url, messages, temperature, maxTokens, apiKey){
   return { resp, data };
 }
 
-// ---------- main handler ----------
+// ---------- MAIN HANDLER ----------
 module.exports = async function (context, req){
   try{
     initConfig();
@@ -365,14 +411,13 @@ module.exports = async function (context, req){
       return;
     }
 
-    // history from client (keep last N turns)
     const history = Array.isArray(req.body?.history) ? req.body.history : [];
     const normalizedHistory = history.slice(-24).map(m => ({
       role: m?.role === 'assistant' ? 'assistant' : 'user',
       content: ((m?.content || '') + '').trim()
     })).filter(m => m.content);
 
-    // env vars for AOAI
+    // AOAI env
     const apiVersion = ((process.env.AZURE_OPENAI_API_VERSION||"2024-08-01-preview")+"").trim();
     const endpoint   = ((process.env.AZURE_OPENAI_ENDPOINT||"")+"").trim().replace(/\/+$/,"");
     const deployment = ((process.env.AZURE_OPENAI_DEPLOYMENT||"")+"").trim();
@@ -383,7 +428,7 @@ module.exports = async function (context, req){
     }
     const url = `${endpoint}/openai/deployments/${deployment}/chat/completions?api-version=${apiVersion}`;
 
-    // ---- Retrieval via Azure AI Search (optional grounding) ----
+    // Optional search
     let contextBlock = "";
     let searchItems = [];
     const lastUser = (normalizedHistory.slice().reverse().find(m => m.role==='user') || {}).content || "";
@@ -397,32 +442,39 @@ module.exports = async function (context, req){
 ${bullets}`;
     }
 
-    // ---- Provider directory gating ----
+    // Extract basics
     const { insuranceDetected, stateDetected, wantsList } =
       extractUserInfo(normalizedHistory, userMessage);
 
     const insurer = (insuranceDetected || "").toLowerCase();
     const state   = stateDetected || "";
 
-    const haveEnoughToMatch  = !!state;       // require state to narrow safely
-    const userExplicitlyAsked = !!wantsList;  // “list/options/suggest providers”
+    const userExplicitlyAsked = !!wantsList;
+    const haveEnoughToMatch   = !!state;
     const shouldShowDirectory = userExplicitlyAsked || haveEnoughToMatch;
 
-    // ---- (NEW) provider/time targeting based on current user turn ----
+    // Provider/time intents
     const mentionedId = detectProviderMention(userMessage, NAME_INDEX);
+    const inferredId  = inferCurrentProviderFromHistory(normalizedHistory, PROVIDERS);
+    const activeProvId = mentionedId || inferredId;
+
     const hhmmReq     = parseTimeRequest(userMessage);
     const wantsLater  = mentionsLater(userMessage);
+    const wantsMore   = wantsMoreSlots(userMessage);
+    const lastShownKey = wantsMore ? inferLastShownKeyFromHistory(normalizedHistory) : "";
 
-    // ---- Build provider directory context ONLY if allowed (shortlists) ----
+    // Build shortlist directory (show few slots per provider)
     let directoryContext = "";
     if (shouldShowDirectory && PROVIDERS.length){
       const roles = ["psychiatrist","therapist"];
       const sections = [];
+      const perProviderShow = wantsMore ? Math.max(SHOW_SLOTS_DEFAULT, 5) : SHOW_SLOTS_DEFAULT;
+
       for (const role of roles){
         const matched = matchProviders({ state, insurer, role }).slice(0, 6);
         if (matched.length){
           const lines = matched.map(p => {
-            const slotStr = soonestSlotsFor(p.id, SHOW_SLOTS_DEFAULT)
+            const slotStr = soonestSlotsFor(p.id, perProviderShow)
               .map(s => `${s.date} ${s.time}`).join(", ");
             const ins   = (p.insurers||[]).join(", ") || "cashpay";
             const stStr = p.states?.join(", ") || "";
@@ -440,42 +492,41 @@ ${sections.join("\n\n")}`;
       }
     }
 
-    // ---- (NEW) Provider-specific compact availability when named or time asked ----
+    // Provider-specific availability: expand calendar when user asks "later/3pm/more"
     let providerAvailabilityContext = "";
-    if (mentionedId){
-      const prov = PROVIDERS.find(p => p.id === mentionedId);
-      if (prov){
+    if (activeProvId){
+      const prov = PROVIDERS.find(p => p.id === activeProvId);
+      if (prov && (hhmmReq || wantsLater || wantsMore || mentionedId)){
+        const PAGE_LIMIT = wantsMore ? 12 : SHOW_SLOTS_PROVIDER;
         let lines = [];
+
         if (hhmmReq){
-          const exact = findSlotsAtTime(mentionedId, hhmmReq);
+          const exact = findSlotsAtTime(activeProvId, hhmmReq, lastShownKey);
           if (exact.length){
-            lines = exact.slice(0, SHOW_SLOTS_PROVIDER).map(s => `- ${s.date} ${s.time}`);
+            lines = exact.slice(0, PAGE_LIMIT).map(s => `- ${s.date} ${s.time}`);
           } else {
-            // no exact match at that time → nearest future options
-            const afterKey = "0000-00-00" + hhmmReq;
-            const near = nearestNextSlots(mentionedId, afterKey, SHOW_SLOTS_PROVIDER);
+            const anchor = lastShownKey || getNowKeyTZ().key;
+            const near = nearestNextSlots(activeProvId, anchor, PAGE_LIMIT);
             lines = near.map(s => `- ${s.date} ${s.time}`);
           }
-        } else if (wantsLater){
-          lines = upcomingSlotsFor(mentionedId).slice(0, SHOW_SLOTS_PROVIDER)
-            .map(s => `- ${s.date} ${s.time}`);
-        } else {
-          // user picked provider but no time constraints → show a little more than shortlist
-          lines = soonestSlotsFor(mentionedId, SHOW_SLOTS_PROVIDER)
-            .map(s => `- ${s.date} ${s.time}`);
+        } else if (wantsLater || wantsMore){
+          const next = upcomingSlotsFor(activeProvId, lastShownKey).slice(0, PAGE_LIMIT);
+          lines = next.map(s => `- ${s.date} ${s.time}`);
+        } else if (mentionedId){
+          lines = soonestSlotsFor(activeProvId, PAGE_LIMIT).map(s => `- ${s.date} ${s.time}`);
         }
 
         if (lines.length){
           providerAvailabilityContext = `
 # Availability (exact; do not invent)
 Provider: ${prov.name} (${prov.role})
-Slots (next 14 days):
+Slots (future only):
 ${lines.join("\n")}`.trim();
         }
       }
     }
 
-    // ---- Build messages
+    // Build messages
     const messages = [
       { role:"system", content:
           (SYS_PROMPT || "You are a helpful intake assistant.") +
@@ -487,16 +538,15 @@ ${lines.join("\n")}`.trim();
       { role:"user", content:userMessage }
     ];
 
-    // ---- Output token budget (keep reasoning strong)
+    // Output budget
     const requestedMax = Number.isFinite(req.body?.max_output_tokens) ? req.body.max_output_tokens : 0;
     const maxTokens = Math.max(requestedMax || 0, 2048);
 
-    // ---- First call
+    // Call model
     let { resp, data } = await callAOAI(url, messages, 1, maxTokens, apiKey);
     const choice = data?.choices?.[0];
     let reply  = (choice?.message?.content || "").trim();
 
-    // Never show a blank if we hit the cap
     if (choice?.finish_reason === "length") {
       reply = reply ? (reply + " …") : "(I hit a token limit — continue?)";
     }
@@ -506,11 +556,10 @@ ${lines.join("\n")}`.trim();
         const cfr = r?.content_filter_results; return cfr && Object.values(cfr).some(v => v?.filtered);
       }));
 
-    // progression checks
-    const lastTurns = normalizedHistory.slice(-24);
-    const clarifiersAsked = lastTurns.filter(m => m.role==='assistant' && /\?\s*$/.test(m.content)).length;
+    const clarifiersAsked = normalizedHistory
+      .slice(-24)
+      .filter(m => m.role==='assistant' && /\?\s*$/.test(m.content)).length;
 
-    // --- If empty/filtered OR still an opener after 2 clarifiers: one more model-led nudge
     if (((!reply || filtered) || (clarifiersAsked >= 2 && looksLikeOpener(reply))) && resp.ok){
       const styles = ["warm-brief", "reassuring-practical", "concise-direct"];
       const styleTag = styles[Math.floor(Math.random() * styles.length)];
@@ -553,7 +602,7 @@ Known facts this turn: ${facts || "none"}.`;
       return;
     }
 
-    // optional debug
+    // Debug mode
     if (req.query?.debug === "1"){
       context.res = { status:200, headers:{ "Content-Type":"application/json" }, body:{
         reply,
@@ -577,8 +626,12 @@ Known facts this turn: ${facts || "none"}.`;
         selected_state: state,
         selected_insurer: insurer,
         mentioned_provider_id: mentionedId,
+        inferred_provider_id: inferredId,
+        active_provider_id: activeProvId,
         time_requested: hhmmReq,
         wants_later: wantsLater,
+        wants_more: wantsMore,
+        last_shown_key: lastShownKey,
         search_used: !!searchItems.length,
         search_items: searchItems,
         history_len: normalizedHistory.length
@@ -588,7 +641,6 @@ Known facts this turn: ${facts || "none"}.`;
 
     context.res = { status:200, headers:{ "Content-Type":"application/json" }, body:{ reply } };
   } catch(e){
-    // Keep it JSON (avoid HTML/hex 500)
     context.res = { status:500, headers:{ "Content-Type":"application/json" }, body:{ error:"server error", detail:String(e) } };
   }
 };
