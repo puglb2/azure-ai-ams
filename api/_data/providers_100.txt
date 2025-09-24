@@ -10,7 +10,7 @@ prov_002	Ethan Smith (DO) — Psychiatry
   Lived experience: Parent, Former teacher
   Languages: English, Mandarin
   Licensed states: AL
-  Insurance: BCBS, Humana, Medicaid
+  Insurance: BCBS, Humana, Medicaid, Cash Pay
   Email: ethan.smith@amsconnects.example
 prov_003	Anna Wright (LMFT) — Therapy
   Styles: Trauma-informed, Mindfulness-based
@@ -24,7 +24,7 @@ prov_004	Henry Kim (LPC) — Therapy
   Lived experience: Former teacher, Immigrant background
   Languages: English, ASL
   Licensed states: AL
-  Insurance: Aetna, Humana, Medicare
+  Insurance: Aetna, Humana, Medicare, Cash Pay
   Email: henry.kim@amsconnects.example
 prov_005	Ella Lopez (PMHNP) — Psychiatry
   Styles: Holistic, Trauma-informed
