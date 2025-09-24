@@ -18,7 +18,7 @@ export default function App() {
   useEffect(() => {
     if (messages.length === 0) {
       setMessages([
-        { role: 'assistant', content: "Hi there! I’m the AMS Intake Assistant. Can you share a little bit about what’s been going on for you?" }
+        { role: 'assistant', content: "Hi there! I’m the AMS Intake Assistant. Can you share a little bit about how you've been feeling?" }
       ])
     }
   }, [messages])
