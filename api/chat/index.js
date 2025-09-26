@@ -2,25 +2,19 @@
 const fs = require("fs");
 const path = require("path");
 
-// ==============================
 // Config knobs (lightweight)
-// ==============================
 const MAX_HISTORY_TURNS = 24;
 const DEFAULT_TEMP = 1;
 const DEFAULT_MAX_COMPLETION_TOKENS = 2048; // floor; client can request more
 const MAX_PROVIDERS_LINES_DEBUG_PREVIEW = 5; // only for ?debug=1 payload brevity
 
-// ==============================
 // Lazy-loaded globals
-// ==============================
 let SYS_PROMPT = "", FAQ_SNIPPET = "", POLICIES_SNIPPET = "";
 let PROVIDERS_TXT = "", PROVIDER_SCHEDULE_TXT = "";
 let PROVIDERS = []; // structured providers
 let SLOTS = [];     // structured slots
 
-// ==============================
 // File helpers
-// ==============================
 function readIfExists(p){ try{ return fs.readFileSync(p, "utf8"); } catch { return ""; } }
 
 function initConfig(){
@@ -56,9 +50,7 @@ ${POLICIES_SNIPPET}`.trim();
   SLOTS     = parseSchedule(PROVIDER_SCHEDULE_TXT);
 }
 
-// ==============================
 // Parsing (no keyword triggers)
-// ==============================
 
 function parseProviders(raw){
   if (!raw || !raw.trim()) return [];
@@ -146,10 +138,8 @@ function parseSchedule(txt){
   return items;
 }
 
-// ==============================
 // Dataset context builder
 // (Model will do semantic inference)
-// ==============================
 
 function buildDatasetContext(){
   // Compact, single-line provider facts
@@ -193,9 +183,7 @@ ${scheduleLines.join("\n")}`.trim() : "";
   return `${visibleDirectory}\n\n${hiddenSchedule}`.trim();
 }
 
-// ==============================
 // Azure OpenAI
-// ==============================
 async function callAOAI(url, messages, temperature, maxTokens, apiKey){
   const resp = await fetch(url, {
     method:"POST",
@@ -211,9 +199,7 @@ async function callAOAI(url, messages, temperature, maxTokens, apiKey){
   return { resp, data };
 }
 
-// ==============================
 // Main HTTP handler
-// ==============================
 module.exports = async function (context, req){
   try{
     initConfig();
