@@ -64,7 +64,7 @@ function parseProviders(raw){
 
     // header like: "prov_001  Allison Hill (PsyD) — Therapy"
     const header = lines[0];
-    const headerMatch = header.match(/^(\S+)\s+(.+?)\s*[—-]\s*(.+)$/) || header.match(/^(\S+)\s+(.+)$/);
+    const headerMatch = header.match(/^(\S+)\s+(.+?)\s*[—]\s*(.+)$/) || header.match(/^(\S+)\s+(.+)$/);
     if (!headerMatch) continue;
 
     const id = headerMatch[1] || "";
