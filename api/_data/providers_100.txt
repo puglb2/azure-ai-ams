@@ -1,1400 +1,1401 @@
-prov_001	Emily Henderson (PMHNP) — Psychiatry
-  Styles: Direct, Goal-oriented
-  Lived experience: LGBTQ+ affirming, Veteran
-  Languages: English, Portuguese
+prov_001	Charlotte Johnson (LMFT) — Therapy
+  Styles: Motivational interviewing, Strength-based
+  Lived experience: First-generation college student, Rural healthcare advocate
+  Languages: English
   Licensed states: AL
-  Insurance: BCBS, Humana, United Healthcare, Cash Pay
-  Email: emily.henderson@amsconnects.example
-prov_002	Ethan Smith (DO) — Psychiatry
-  Styles: CBT-focused, Trauma-informed
-  Lived experience: Parent, Former teacher
-  Languages: English, Mandarin
+  Insurance: Cigna, Medicaid, Cash Pay
+  Email: charlotte.johnson@amsconnects.example
+prov_002	Aiden White (LMFT) — Therapy
+  Styles: Holistic, Direct, Goal-oriented
+  Lived experience: First-generation college student, Former teacher
+  Languages: English
   Licensed states: AL
-  Insurance: BCBS, Humana, Medicaid, Cash Pay
-  Email: ethan.smith@amsconnects.example
-prov_003	Anna Wright (LMFT) — Therapy
-  Styles: Trauma-informed, Mindfulness-based
-  Lived experience: Experienced grief/loss, Immigrant background
-  Languages: English, Mandarin
+  Insurance: BCBS, Aetna, Cash Pay
+  Email: aiden.white@amsconnects.example
+prov_003	Emily White (PMHNP) — Psychiatry
+  Styles: Strength-based, Compassionate listening
+  Lived experience: Veteran, First-generation college student
+  Languages: English, French
   Licensed states: AL
-  Insurance: Cigna, Humana, Medicaid, Cash Pay
-  Email: anna.wright@amsconnects.example
-prov_004	Henry Kim (LPC) — Therapy
-  Styles: Holistic, Goal-oriented
+  Insurance: BCBS, United Healthcare, Cash Pay
+  Email: emily.white@amsconnects.example
+prov_004	Daniel Smith (PMHNP) — Psychiatry
+  Styles: Motivational interviewing, Mindfulness-based
   Lived experience: Former teacher, Immigrant background
-  Languages: English, ASL
+  Languages: English
   Licensed states: AL
-  Insurance: Aetna, Humana, Medicare, Cash Pay
-  Email: henry.kim@amsconnects.example
-prov_005	Ella Lopez (PMHNP) — Psychiatry
-  Styles: Holistic, Trauma-informed
-  Lived experience: Former teacher, Experienced grief/loss
-  Languages: English, Hindi
-  Licensed states: AK
-  Insurance: Aetna, Humana, Medicare, Cash Pay
-  Email: ella.lopez@amsconnects.example
-prov_006	Aiden Wright (PMHNP) — Psychiatry
-  Styles: Compassionate, Goal-oriented
-  Lived experience: Veteran, Chronic illness survivor
-  Languages: English, French
-  Licensed states: AK
-  Insurance: Cigna, Medicare, Cash Pay
-  Email: aiden.wright@amsconnects.example
-prov_007	Layla Smith (LPC) — Therapy
-  Styles: Trauma-informed, Holistic
-  Lived experience: Veteran, First-generation college graduate
-  Languages: English, Hindi
-  Licensed states: AK
-  Insurance: BCBS, Humana, Cash Pay
-  Email: layla.smith@amsconnects.example
-prov_008	Samuel Johnson (LPC) — Therapy
-  Styles: Holistic, Compassionate
-  Lived experience: First-generation college graduate, Parent
-  Languages: English, ASL
-  Licensed states: AK
-  Insurance: Cigna, Humana, Medicare, Cash Pay
-  Email: samuel.johnson@amsconnects.example
-prov_009	Violet Adams (PMHNP) — Psychiatry
-  Styles: Direct, Holistic
-  Lived experience: Chronic illness survivor, Neurodivergent
-  Languages: English, Portuguese
-  Licensed states: AZ
-  Insurance: BCBS, Cigna, Cash Pay
-  Email: violet.adams@amsconnects.example
-prov_010	Samuel Harris (PMHNP) — Psychiatry
-  Styles: Trauma-informed, CBT-focused
-  Lived experience: Neurodivergent, Chronic illness survivor
-  Languages: English, French
-  Licensed states: AZ
-  Insurance: BCBS, Humana, United Healthcare, Cash Pay
-  Email: samuel.harris@amsconnects.example
-prov_011	Olivia Baker (LCSW) — Therapy
-  Styles: Direct, Holistic
-  Lived experience: LGBTQ+ affirming, Chronic illness survivor
-  Languages: English, Hindi
-  Licensed states: AZ
-  Insurance: BCBS, Humana, Medicaid
-  Email: olivia.baker@amsconnects.example
-prov_012	Michael White (LPC) — Therapy
-  Styles: CBT-focused, Compassionate
-  Lived experience: Veteran, Former teacher
-  Languages: English, ASL
-  Licensed states: AZ
-  Insurance: United Healthcare, Medicare, Medicaid, Cash Pay
-  Email: michael.white@amsconnects.example
-prov_013	Amelia Thomas (DO) — Psychiatry
-  Styles: Mindfulness-based, Compassionate
-  Lived experience: Immigrant background, Former teacher
-  Languages: English, ASL
-  Licensed states: AR
-  Insurance: Aetna, Cigna, United Healthcare
-  Email: amelia.thomas@amsconnects.example
-prov_014	Elijah Green (DO) — Psychiatry
-  Styles: Direct, Mindfulness-based
-  Lived experience: LGBTQ+ affirming, Former teacher
-  Languages: English, ASL
-  Licensed states: AR
-  Insurance: Aetna, Cigna, United Healthcare, Cash Pay
-  Email: elijah.green@amsconnects.example
-prov_015	Emily Nelson (LPC) — Therapy
-  Styles: Holistic, Goal-oriented
-  Lived experience: First-generation college graduate, Parent
-  Languages: English, Mandarin
-  Licensed states: AR
-  Insurance: Aetna, BCBS, Medicare, Cash Pay
-  Email: emily.nelson@amsconnects.example
-prov_016	Ethan Wright (PsyD) — Therapy
-  Styles: Holistic, Direct
-  Lived experience: LGBTQ+ affirming, Child of immigrants
-  Languages: English, Hindi
-  Licensed states: AR
-  Insurance: Cigna, United Healthcare, Cash Pay
-  Email: ethan.wright@amsconnects.example
-prov_017	Aria Smith (DO) — Psychiatry
-  Styles: Trauma-informed, Goal-oriented
-  Lived experience: Neurodivergent, Experienced grief/loss
-  Languages: English, Arabic
-  Licensed states: CA
-  Insurance: Aetna, BCBS, Cash Pay
-  Email: aria.smith@amsconnects.example
-prov_018	James Henderson (DO) — Psychiatry
-  Styles: CBT-focused, Direct
-  Lived experience: Parent, LGBTQ+ affirming
-  Languages: English, Portuguese
-  Licensed states: CA
-  Insurance: Aetna, BCBS, Cash Pay
-  Email: james.henderson@amsconnects.example
-prov_019	Zoe Lopez (PsyD) — Therapy
-  Styles: Direct, Mindfulness-based
-  Lived experience: Chronic illness survivor, First-generation college graduate
-  Languages: English, Hindi
-  Licensed states: CA
-  Insurance: Cigna, United Healthcare, Medicare
-  Email: zoe.lopez@amsconnects.example
-prov_020	Aiden Scott (PhD) — Therapy
-  Styles: Holistic, Mindfulness-based
-  Lived experience: First-generation college graduate, Veteran
-  Languages: English, Spanish
-  Licensed states: CA
-  Insurance: Cigna, Humana, Medicaid, Cash Pay
-  Email: aiden.scott@amsconnects.example
-prov_021	Olivia Young (MD) — Psychiatry
-  Styles: Compassionate, CBT-focused
-  Lived experience: Experienced grief/loss, Veteran
-  Languages: English, Mandarin
-  Licensed states: CO
-  Insurance: BCBS, Humana, United Healthcare, Cash Pay
-  Email: olivia.young@amsconnects.example
-prov_022	William Nguyen (PMHNP) — Psychiatry
-  Styles: Mindfulness-based, Direct
-  Lived experience: Veteran, Child of immigrants
-  Languages: English, ASL
-  Licensed states: CO
-  Insurance: Aetna, BCBS, Medicare
-  Email: william.nguyen@amsconnects.example
-prov_023	Anna Lopez (LMFT) — Therapy
-  Styles: Direct, CBT-focused
-  Lived experience: Chronic illness survivor, Child of immigrants
-  Languages: English, Mandarin
-  Licensed states: CO
-  Insurance: Aetna, BCBS, Medicaid, Cash Pay
-  Email: anna.lopez@amsconnects.example
-prov_024	Henry Brown (PhD) — Therapy
-  Styles: Goal-oriented, CBT-focused
-  Lived experience: Child of immigrants, Chronic illness survivor
-  Languages: English, Mandarin
-  Licensed states: CO
-  Insurance: BCBS, Cigna, Humana
-  Email: henry.brown@amsconnects.example
-prov_025	Violet King (MD) — Psychiatry
-  Styles: Trauma-informed, Goal-oriented
-  Lived experience: Parent, Veteran
-  Languages: English, Hindi
-  Licensed states: CT
-  Insurance: United Healthcare, Medicaid, Cash Pay
-  Email: violet.king@amsconnects.example
-prov_026	Daniel Lopez (DO) — Psychiatry
-  Styles: Compassionate, Trauma-informed
-  Lived experience: Veteran, Immigrant background
-  Languages: English, Arabic
-  Licensed states: CT
-  Insurance: BCBS, United Healthcare, Cash Pay
-  Email: daniel.lopez@amsconnects.example
-prov_027	Olivia Lewis (LCSW) — Therapy
-  Styles: Mindfulness-based, Holistic
-  Lived experience: Former teacher, Child of immigrants
-  Languages: English, French
-  Licensed states: CT
-  Insurance: BCBS, United Healthcare, Medicare
-  Email: olivia.lewis@amsconnects.example
-prov_028	Aiden Brown (PhD) — Therapy
-  Styles: Direct, Holistic
-  Lived experience: Immigrant background, Child of immigrants
-  Languages: English, French
-  Licensed states: CT
-  Insurance: Aetna, BCBS, Humana
-  Email: aiden.brown@amsconnects.example
-prov_029	Violet Kim (MD) — Psychiatry
-  Styles: CBT-focused, Direct
-  Lived experience: Child of immigrants, Immigrant background
-  Languages: English, Mandarin
-  Licensed states: DE
-  Insurance: Aetna, BCBS, Medicare, Cash Pay
-  Email: violet.kim@amsconnects.example
-prov_030	Lucas Taylor (PMHNP) — Psychiatry
-  Styles: CBT-focused, Holistic
-  Lived experience: Child of immigrants, Parent
-  Languages: English, Portuguese
-  Licensed states: DE
-  Insurance: Aetna, United Healthcare, Medicare
-  Email: lucas.taylor@amsconnects.example
-prov_031	Ava Brown (LCSW) — Therapy
-  Styles: Compassionate, Holistic
-  Lived experience: Child of immigrants, LGBTQ+ affirming
-  Languages: English, French
-  Licensed states: DE
-  Insurance: BCBS, United Healthcare, Cash Pay
-  Email: ava.brown@amsconnects.example
-prov_032	Jackson Young (LPC) — Therapy
-  Styles: CBT-focused, Mindfulness-based
-  Lived experience: Immigrant background, Parent
-  Languages: English, Spanish
-  Licensed states: DE
-  Insurance: Cigna, Medicaid, Cash Pay
-  Email: jackson.young@amsconnects.example
-prov_033	Zoe Wright (DO) — Psychiatry
-  Styles: Trauma-informed, Goal-oriented
-  Lived experience: LGBTQ+ affirming, Child of immigrants
-  Languages: English, Hindi
-  Licensed states: FL
-  Insurance: Aetna, United Healthcare, Medicaid, Cash Pay
-  Email: zoe.wright@amsconnects.example
-prov_034	Logan Harris (MD) — Psychiatry
-  Styles: Holistic, Goal-oriented
-  Lived experience: Former teacher, Child of immigrants
-  Languages: English, Mandarin
-  Licensed states: FL
-  Insurance: Aetna, BCBS, Medicaid, Cash Pay
-  Email: logan.harris@amsconnects.example
-prov_035	Olivia Adams (LPC) — Therapy
-  Styles: Direct, Holistic
-  Lived experience: First-generation college graduate, Veteran
-  Languages: English, French
-  Licensed states: FL
-  Insurance: United Healthcare, Medicare, Medicaid, Cash Pay
-  Email: olivia.adams@amsconnects.example
-prov_036	Aiden Baker (LMFT) — Therapy
-  Styles: Holistic, Direct
-  Lived experience: Neurodivergent, Parent
-  Languages: English, Mandarin
-  Licensed states: FL
-  Insurance: Aetna, Humana, Medicare, Medicaid, Cash Pay
-  Email: aiden.baker@amsconnects.example
-prov_037	Emily Anderson (MD) — Psychiatry
-  Styles: Holistic, Mindfulness-based
-  Lived experience: First-generation college graduate, Immigrant background
-  Languages: English, ASL
-  Licensed states: GA
-  Insurance: Cigna, Medicaid, Cash Pay
-  Email: emily.anderson@amsconnects.example
-prov_038	Aiden Johnson (MD) — Psychiatry
-  Styles: Trauma-informed, Direct
-  Lived experience: Neurodivergent, Experienced grief/loss
-  Languages: English, French
-  Licensed states: GA
-  Insurance: BCBS, Cigna, Medicaid, Cash Pay
-  Email: aiden.johnson@amsconnects.example
-prov_039	Hannah Anderson (PsyD) — Therapy
-  Styles: Goal-oriented, Compassionate
-  Lived experience: Veteran, Experienced grief/loss
-  Languages: English, Mandarin
-  Licensed states: GA
-  Insurance: Aetna, United Healthcare, Medicaid
-  Email: hannah.anderson@amsconnects.example
-prov_040	Benjamin King (LPC) — Therapy
-  Styles: Mindfulness-based, Trauma-informed
-  Lived experience: Child of immigrants, Veteran
-  Languages: English, Arabic
-  Licensed states: GA
-  Insurance: Aetna, Cigna, Humana
-  Email: benjamin.king@amsconnects.example
-prov_041	Anna White (DO) — Psychiatry
-  Styles: Goal-oriented, CBT-focused
-  Lived experience: Veteran, Neurodivergent
-  Languages: English, Hindi
-  Licensed states: HI
-  Insurance: Aetna, Medicare, Cash Pay
-  Email: anna.white@amsconnects.example
-prov_042	Elijah White (PMHNP) — Psychiatry
-  Styles: Trauma-informed, Mindfulness-based
-  Lived experience: Experienced grief/loss, Chronic illness survivor
-  Languages: English, Portuguese
-  Licensed states: HI
-  Insurance: BCBS, United Healthcare, Cash Pay
-  Email: elijah.white@amsconnects.example
-prov_043	Ella Young (LMFT) — Therapy
-  Styles: CBT-focused, Trauma-informed
-  Lived experience: Immigrant background, Chronic illness survivor
-  Languages: English, Hindi
-  Licensed states: HI
-  Insurance: Aetna, Cigna, Medicaid, Cash Pay
-  Email: ella.young@amsconnects.example
-prov_044	Owen Lewis (LPC) — Therapy
-  Styles: Mindfulness-based, CBT-focused
-  Lived experience: Chronic illness survivor, First-generation college graduate
-  Languages: English, Hindi
-  Licensed states: HI
-  Insurance: Aetna, Medicare, Medicaid, Cash Pay
-  Email: owen.lewis@amsconnects.example
-prov_045	Amelia White (PMHNP) — Psychiatry
-  Styles: Compassionate, Goal-oriented
-  Lived experience: Immigrant background, First-generation college graduate
-  Languages: English, ASL
-  Licensed states: ID
-  Insurance: Aetna, BCBS, Humana, Cash Pay
-  Email: amelia.white@amsconnects.example
-prov_046	Alexander Lewis (MD) — Psychiatry
-  Styles: Mindfulness-based, CBT-focused
-  Lived experience: Former teacher, First-generation college graduate
-  Languages: English, Portuguese
-  Licensed states: ID
-  Insurance: Aetna, Humana, Medicaid, Cash Pay
-  Email: alexander.lewis@amsconnects.example
-prov_047	Anna Adams (LCSW) — Therapy
-  Styles: Holistic, Mindfulness-based
-  Lived experience: First-generation college graduate, LGBTQ+ affirming
-  Languages: English, ASL
-  Licensed states: ID
-  Insurance: Aetna, United Healthcare, Cash Pay
-  Email: anna.adams@amsconnects.example
-prov_048	Mason Taylor (LMFT) — Therapy
-  Styles: Holistic, Mindfulness-based
-  Lived experience: Child of immigrants, Former teacher
-  Languages: English, Hindi
-  Licensed states: ID
-  Insurance: Humana, United Healthcare, Medicare, Medicaid
-  Email: mason.taylor@amsconnects.example
-prov_049	Aaliyah Taylor (DO) — Psychiatry
-  Styles: Trauma-informed, Mindfulness-based
-  Lived experience: Chronic illness survivor, Immigrant background
-  Languages: English, ASL
-  Licensed states: IL
-  Insurance: Cigna, Humana, Medicare, Medicaid
-  Email: aaliyah.taylor@amsconnects.example
-prov_050	Daniel Moore (DO) — Psychiatry
-  Styles: Goal-oriented, CBT-focused
-  Lived experience: Veteran, Experienced grief/loss
-  Languages: English, Mandarin
-  Licensed states: IL
-  Insurance: Cigna, United Healthcare, Medicaid
-  Email: daniel.moore@amsconnects.example
-prov_051	Sophia Patel (LMFT) — Therapy
-  Styles: Direct, CBT-focused
-  Lived experience: LGBTQ+ affirming, Immigrant background
-  Languages: English, Spanish
-  Licensed states: IL
-  Insurance: Cigna, Humana, Medicaid
-  Email: sophia.patel@amsconnects.example
-prov_052	William Garcia (LMFT) — Therapy
-  Styles: Holistic, Mindfulness-based
-  Lived experience: Neurodivergent, Parent
-  Languages: English, ASL
-  Licensed states: IL
-  Insurance: Aetna, Humana, Medicaid
-  Email: william.garcia@amsconnects.example
-prov_053	Amelia Wright (PsyD) — Psychiatry
-  Styles: Holistic, Mindfulness-based
-  Lived experience: Child of immigrants, Former teacher
-  Languages: English, ASL
-  Licensed states: IN
-  Insurance: BCBS, Humana, Cash Pay
-  Email: amelia.wright@amsconnects.example
-prov_054	Alexander Henderson (PsyD) — Psychiatry
-  Styles: Goal-oriented, Holistic
-  Lived experience: Neurodivergent, LGBTQ+ affirming
-  Languages: English, ASL
-  Licensed states: IN
-  Insurance: BCBS, United Healthcare, Cash Pay
-  Email: alexander.henderson@amsconnects.example
-prov_055	Ella Clark (PsyD) — Therapy
-  Styles: Trauma-informed, Compassionate
-  Lived experience: Veteran, Chronic illness survivor
-  Languages: English, Mandarin
-  Licensed states: IN
-  Insurance: Aetna, BCBS, Cash Pay
-  Email: ella.clark@amsconnects.example
-prov_056	James Smith (PhD) — Therapy
-  Styles: Goal-oriented, Mindfulness-based
-  Lived experience: Neurodivergent, Immigrant background
-  Languages: English, ASL
-  Licensed states: IN
-  Insurance: Aetna, Cigna, Medicaid, Cash Pay
-  Email: james.smith@amsconnects.example
-prov_057	Aaliyah Garcia (PMHNP) — Psychiatry
-  Styles: Direct, Holistic
-  Lived experience: Veteran, Parent
-  Languages: English, ASL
-  Licensed states: IA
-  Insurance: Aetna, BCBS, Medicaid
-  Email: aaliyah.garcia@amsconnects.example
-prov_058	Wyatt Patel (DO) — Psychiatry
-  Styles: Direct, CBT-focused
-  Lived experience: Veteran, Immigrant background
-  Languages: English, Arabic
-  Licensed states: IA
-  Insurance: Cigna, United Healthcare, Medicaid, Cash Pay
-  Email: wyatt.patel@amsconnects.example
-prov_059	Aurora King (LCSW) — Therapy
-  Styles: Holistic, Direct
-  Lived experience: Immigrant background, Veteran
-  Languages: English, Hindi
-  Licensed states: IA
-  Insurance: Aetna, Cigna, United Healthcare
-  Email: aurora.king@amsconnects.example
-prov_060	Henry Anderson (LMFT) — Therapy
-  Styles: Compassionate, Trauma-informed
-  Lived experience: First-generation college graduate, Veteran
-  Languages: English, Portuguese
-  Licensed states: IA
-  Insurance: United Healthcare, Medicare, Medicaid
-  Email: henry.anderson@amsconnects.example
-prov_061	Emily Scott (MD) — Psychiatry
-  Styles: Goal-oriented, Trauma-informed
-  Lived experience: Neurodivergent, Experienced grief/loss
-  Languages: English, Spanish
-  Licensed states: KS
-  Insurance: Aetna, Humana, Medicare
-  Email: emily.scott@amsconnects.example
-prov_062	Mason Thomas (PMHNP) — Psychiatry
-  Styles: Trauma-informed, Mindfulness-based
-  Lived experience: LGBTQ+ affirming, Chronic illness survivor
-  Languages: English, Mandarin
-  Licensed states: KS
-  Insurance: United Healthcare, Medicaid, Cash Pay
-  Email: mason.thomas@amsconnects.example
-prov_063	Nora Thomas (PsyD) — Therapy
-  Styles: Goal-oriented, Mindfulness-based
-  Lived experience: First-generation college graduate, Veteran
-  Languages: English, French
-  Licensed states: KS
-  Insurance: BCBS, Humana, Cash Pay
-  Email: nora.thomas@amsconnects.example
-prov_064	Henry Wilson (LCSW) — Therapy
-  Styles: Mindfulness-based, Goal-oriented
-  Lived experience: LGBTQ+ affirming, Child of immigrants
-  Languages: English, Mandarin
-  Licensed states: KS
-  Insurance: Cigna, Medicare, Medicaid, Cash Pay
-  Email: henry.wilson@amsconnects.example
-prov_065	Aurora Allen (PMHNP) — Psychiatry
-  Styles: CBT-focused, Compassionate
-  Lived experience: Child of immigrants, First-generation college graduate
-  Languages: English, Spanish
-  Licensed states: KY
-  Insurance: Humana, United Healthcare, Medicare, Cash Pay
-  Email: aurora.allen@amsconnects.example
-prov_066	Aiden Allen (PsyD) — Psychiatry
-  Styles: Trauma-informed, Holistic
-  Lived experience: Chronic illness survivor, Child of immigrants
-  Languages: English, ASL
-  Licensed states: KY
-  Insurance: Aetna, Cigna, Cash Pay
-  Email: aiden.allen@amsconnects.example
-prov_067	Grace Davis (PsyD) — Therapy
-  Styles: Goal-oriented, CBT-focused
-  Lived experience: Child of immigrants, Former teacher
-  Languages: English, French
-  Licensed states: KY
-  Insurance: United Healthcare, Medicare, Medicaid, Cash Pay
-  Email: grace.davis@amsconnects.example
-prov_068	Michael Brown (LPC) — Therapy
-  Styles: Goal-oriented, Direct
-  Lived experience: Veteran, Immigrant background
-  Languages: English, French
-  Licensed states: KY
-  Insurance: BCBS, United Healthcare, Medicare
-  Email: michael.brown@amsconnects.example
-prov_069	Mia Smith (DO) — Psychiatry
-  Styles: Trauma-informed, Mindfulness-based
-  Lived experience: Immigrant background, Former teacher
-  Languages: English, Hindi
-  Licensed states: LA
-  Insurance: Aetna, BCBS, United Healthcare, Cash Pay
-  Email: mia.smith@amsconnects.example
-prov_070	Benjamin Nguyen (PMHNP) — Psychiatry
-  Styles: Compassionate, Holistic
-  Lived experience: Child of immigrants, LGBTQ+ affirming
-  Languages: English, French
-  Licensed states: LA
-  Insurance: Aetna, United Healthcare, Cash Pay
-  Email: benjamin.nguyen@amsconnects.example
-prov_071	Ava Walker (PhD) — Therapy
-  Styles: Compassionate, Direct
-  Lived experience: Former teacher, Immigrant background
-  Languages: English, Arabic
-  Licensed states: LA
-  Insurance: Cigna, Humana, Cash Pay
-  Email: ava.walker@amsconnects.example
-prov_072	Noah Brown (PhD) — Therapy
-  Styles: Compassionate, Direct
-  Lived experience: Neurodivergent, Child of immigrants
-  Languages: English, Spanish
-  Licensed states: LA
-  Insurance: Aetna, BCBS, Medicaid
-  Email: noah.brown@amsconnects.example
-prov_073	Amelia Lopez (DO) — Psychiatry
-  Styles: Compassionate, Trauma-informed
-  Lived experience: Neurodivergent, First-generation college graduate
-  Languages: English, ASL
-  Licensed states: ME
-  Insurance: Cigna, Humana, Medicaid, Cash Pay
-  Email: amelia.lopez@amsconnects.example
-prov_074	William Davis (MD) — Psychiatry
-  Styles: CBT-focused, Holistic
-  Lived experience: Veteran, Immigrant background
-  Languages: English, Portuguese
-  Licensed states: ME
-  Insurance: Cigna, Humana, Medicare, Cash Pay
-  Email: william.davis@amsconnects.example
-prov_075	Grace Nguyen (PsyD) — Therapy
-  Styles: Compassionate, Goal-oriented
-  Lived experience: Parent, Chronic illness survivor
-  Languages: English, Arabic
-  Licensed states: ME
-  Insurance: Aetna, Cigna, Cash Pay
-  Email: grace.nguyen@amsconnects.example
-prov_076	Elijah Allen (PhD) — Therapy
-  Styles: Compassionate, Holistic
-  Lived experience: First-generation college graduate, Experienced grief/loss
-  Languages: English, ASL
-  Licensed states: ME
-  Insurance: Aetna, Humana, Cash Pay
-  Email: elijah.allen@amsconnects.example
-prov_077	Ava Nelson (PMHNP) — Psychiatry
-  Styles: Holistic, Direct
-  Lived experience: Veteran, Parent
-  Languages: English, Mandarin
-  Licensed states: MD
-  Insurance: United Healthcare, Medicare, Cash Pay
-  Email: ava.nelson@amsconnects.example
-prov_078	Elijah Taylor (MD) — Psychiatry
-  Styles: Mindfulness-based, Holistic
-  Lived experience: Immigrant background, Chronic illness survivor
-  Languages: English, French
-  Licensed states: MD
-  Insurance: Aetna, Humana, Cash Pay
-  Email: elijah.taylor@amsconnects.example
-prov_079	Aria King (LPC) — Therapy
-  Styles: CBT-focused, Goal-oriented
-  Lived experience: Parent, LGBTQ+ affirming
-  Languages: English, Mandarin
-  Licensed states: MD
-  Insurance: Aetna, Medicare, Medicaid
-  Email: aria.king@amsconnects.example
-prov_080	Owen Garcia (LMFT) — Therapy
-  Styles: Mindfulness-based, Trauma-informed
-  Lived experience: Chronic illness survivor, Immigrant background
-  Languages: English, Mandarin
-  Licensed states: MD
-  Insurance: BCBS, Humana, Medicare, Medicaid, Cash Pay
-  Email: owen.garcia@amsconnects.example
-prov_081	Aria Wilson (PMHNP) — Psychiatry
-  Styles: Trauma-informed, Compassionate
-  Lived experience: LGBTQ+ affirming, Neurodivergent
-  Languages: English, Arabic
-  Licensed states: MA
-  Insurance: Cigna, Medicare, Cash Pay
-  Email: aria.wilson@amsconnects.example
-prov_082	Samuel Garcia (PsyD) — Psychiatry
-  Styles: Compassionate, Mindfulness-based
-  Lived experience: Immigrant background, Neurodivergent
-  Languages: English, Spanish
-  Licensed states: MA
-  Insurance: United Healthcare, Medicaid, Cash Pay
-  Email: samuel.garcia@amsconnects.example
-prov_083	Anna Young (PsyD) — Therapy
-  Styles: Mindfulness-based, CBT-focused
-  Lived experience: Parent, Immigrant background
-  Languages: English, Hindi
-  Licensed states: MA
-  Insurance: Humana, United Healthcare, Medicare
-  Email: anna.young@amsconnects.example
-prov_084	Noah Smith (LPC) — Therapy
-  Styles: CBT-focused, Direct
-  Lived experience: Immigrant background, Child of immigrants
-  Languages: English, Portuguese
-  Licensed states: MA
-  Insurance: Aetna, Medicaid, Cash Pay
-  Email: noah.smith@amsconnects.example
-prov_085	Aurora Scott (DO) — Psychiatry
-  Styles: Trauma-informed, Direct
-  Lived experience: Immigrant background, Former teacher
-  Languages: English, Spanish
-  Licensed states: MI
-  Insurance: Aetna, BCBS, Medicaid
-  Email: aurora.scott@amsconnects.example
-prov_086	Mason Taylor (MD) — Psychiatry
-  Styles: Trauma-informed, Direct
-  Lived experience: Chronic illness survivor, Immigrant background
-  Languages: English, Hindi
-  Licensed states: MI
-  Insurance: Humana, United Healthcare, Medicaid
-  Email: mason.taylor@amsconnects.example
-prov_087	Grace Taylor (PsyD) — Therapy
-  Styles: Direct, CBT-focused
-  Lived experience: First-generation college graduate, Former teacher
-  Languages: English, Portuguese
-  Licensed states: MI
-  Insurance: Aetna, Cigna, Medicaid, Cash Pay
-  Email: grace.taylor@amsconnects.example
-prov_088	William Wilson (PsyD) — Therapy
-  Styles: Goal-oriented, Compassionate
-  Lived experience: Immigrant background, Experienced grief/loss
-  Languages: English, ASL
-  Licensed states: MI
-  Insurance: BCBS, Medicaid, Cash Pay
-  Email: william.wilson@amsconnects.example
-prov_089	Lily Martinez (PMHNP) — Psychiatry
-  Styles: CBT-focused, Trauma-informed
-  Lived experience: Neurodivergent, Child of immigrants
-  Languages: English, French
-  Licensed states: MN
-  Insurance: BCBS, Humana, Medicare
-  Email: lily.martinez@amsconnects.example
-prov_090	Aiden Baker (PsyD) — Psychiatry
-  Styles: Compassionate, Mindfulness-based
-  Lived experience: Chronic illness survivor, Neurodivergent
-  Languages: English, Arabic
-  Licensed states: MN
-  Insurance: Aetna, Cigna, Humana, Cash Pay
-  Email: aiden.baker@amsconnects.example
-prov_091	Violet Wilson (LCSW) — Therapy
-  Styles: Holistic, Mindfulness-based
-  Lived experience: Veteran, Former teacher
-  Languages: English, Arabic
-  Licensed states: MN
-  Insurance: Aetna, BCBS, Medicare, Cash Pay
-  Email: violet.wilson@amsconnects.example
-prov_092	Logan Lopez (PhD) — Therapy
-  Styles: Holistic, Goal-oriented
-  Lived experience: Experienced grief/loss, Chronic illness survivor
-  Languages: English, Portuguese
-  Licensed states: MN
-  Insurance: BCBS, Cigna, Medicaid
-  Email: logan.lopez@amsconnects.example
-prov_093	Aaliyah Anderson (PMHNP) — Psychiatry
-  Styles: Trauma-informed, Holistic
-  Lived experience: Chronic illness survivor, Former teacher
-  Languages: English, Spanish
-  Licensed states: MS
-  Insurance: BCBS, Medicare, Cash Pay
-  Email: aaliyah.anderson@amsconnects.example
-prov_094	Elijah Johnson (MD) — Psychiatry
-  Styles: Mindfulness-based, Compassionate
-  Lived experience: Veteran, Child of immigrants
-  Languages: English, Mandarin
-  Licensed states: MS
-  Insurance: Aetna, United Healthcare, Medicaid, Cash Pay
-  Email: elijah.johnson@amsconnects.example
-prov_095	Olivia Davis (LPC) — Therapy
-  Styles: Goal-oriented, CBT-focused
-  Lived experience: LGBTQ+ affirming, Immigrant background
-  Languages: English, Hindi
-  Licensed states: MS
-  Insurance: United Healthcare, Medicare, Medicaid
-  Email: olivia.davis@amsconnects.example
-prov_096	Lucas Nguyen (LCSW) — Therapy
-  Styles: CBT-focused, Mindfulness-based
-  Lived experience: Former teacher, First-generation college graduate
-  Languages: English, Arabic
-  Licensed states: MS
-  Insurance: BCBS, Cigna, Humana
-  Email: lucas.nguyen@amsconnects.example
-prov_097	Nora Brown (MD) — Psychiatry
-  Styles: Holistic, Mindfulness-based
-  Lived experience: Immigrant background, Former teacher
-  Languages: English, Mandarin
-  Licensed states: MO
-  Insurance: BCBS, Cigna, Humana
-  Email: nora.brown@amsconnects.example
-prov_098	Elijah Walker (PsyD) — Psychiatry
-  Styles: Trauma-informed, Goal-oriented
-  Lived experience: Chronic illness survivor, Immigrant background
-  Languages: English, Mandarin
-  Licensed states: MO
-  Insurance: BCBS, Humana, Medicaid, Cash Pay
-  Email: elijah.walker@amsconnects.example
-prov_099	Violet Martinez (PsyD) — Therapy
-  Styles: Goal-oriented, Holistic
-  Lived experience: Immigrant background, Parent
-  Languages: English, ASL
-  Licensed states: MO
-  Insurance: Aetna, Cigna, Medicaid
-  Email: violet.martinez@amsconnects.example
-prov_100	Noah Nelson (PsyD) — Therapy
-  Styles: Trauma-informed, Mindfulness-based
-  Lived experience: Immigrant background, First-generation college graduate
-  Languages: English, Hindi
-  Licensed states: MO
-  Insurance: BCBS, Medicare, Cash Pay
-  Email: noah.nelson@amsconnects.example
-prov_101	Chloe Young (DO) — Psychiatry
-  Styles: Trauma-informed, Compassionate
-  Lived experience: Parent, Experienced grief/loss
-  Languages: English, ASL
-  Licensed states: MT
-  Insurance: Aetna, United Healthcare, Cash Pay
-  Email: chloe.young@amsconnects.example
-prov_102	Logan Lopez (PMHNP) — Psychiatry
-  Styles: Goal-oriented, Holistic
-  Lived experience: Neurodivergent, LGBTQ+ affirming
-  Languages: English, Mandarin
-  Licensed states: MT
-  Insurance: Cigna, United Healthcare, Medicaid
-  Email: logan.lopez@amsconnects.example
-prov_103	Layla White (PsyD) — Therapy
-  Styles: Goal-oriented, Direct
-  Lived experience: Immigrant background, Child of immigrants
-  Languages: English, ASL
-  Licensed states: MT
-  Insurance: Cigna, United Healthcare, Medicare
-  Email: layla.white@amsconnects.example
-prov_104	Michael Lopez (LMFT) — Therapy
-  Styles: Holistic, Direct
-  Lived experience: Neurodivergent, Former teacher
-  Languages: English, French
-  Licensed states: MT
-  Insurance: BCBS, Humana, Medicaid, Cash Pay
-  Email: michael.lopez@amsconnects.example
-prov_105	Aaliyah Kim (PsyD) — Psychiatry
-  Styles: Goal-oriented, Holistic
-  Lived experience: Immigrant background, Chronic illness survivor
-  Languages: English, ASL
-  Licensed states: NE
-  Insurance: Aetna, Medicare, Cash Pay
-  Email: aaliyah.kim@amsconnects.example
-prov_106	Liam Lewis (PMHNP) — Psychiatry
-  Styles: CBT-focused, Direct
-  Lived experience: Veteran, Child of immigrants
-  Languages: English, Portuguese
-  Licensed states: NE
-  Insurance: Humana, United Healthcare, Medicare, Cash Pay
-  Email: liam.lewis@amsconnects.example
-prov_107	Olivia Garcia (LPC) — Therapy
-  Styles: Mindfulness-based, Compassionate
-  Lived experience: Veteran, Immigrant background
-  Languages: English, Hindi
-  Licensed states: NE
-  Insurance: Cigna, Humana, Medicaid, Cash Pay
-  Email: olivia.garcia@amsconnects.example
-prov_108	Samuel Thomas (PsyD) — Therapy
-  Styles: Trauma-informed, Holistic
-  Lived experience: LGBTQ+ affirming, Chronic illness survivor
-  Languages: English, Portuguese
-  Licensed states: NE
-  Insurance: BCBS, Humana, Medicaid
-  Email: samuel.thomas@amsconnects.example
-prov_109	Chloe Garcia (PMHNP) — Psychiatry
-  Styles: Direct, CBT-focused
-  Lived experience: Chronic illness survivor, First-generation college graduate
-  Languages: English, ASL
-  Licensed states: NV
-  Insurance: Aetna, Medicare, Cash Pay
-  Email: chloe.garcia@amsconnects.example
-prov_110	Benjamin Garcia (PsyD) — Psychiatry
-  Styles: Goal-oriented, Direct
-  Lived experience: Veteran, Child of immigrants
-  Languages: English, Spanish
-  Licensed states: NV
-  Insurance: BCBS, Humana, Medicare, Medicaid, Cash Pay
-  Email: benjamin.garcia@amsconnects.example
-prov_111	Zoe Johnson (LMFT) — Therapy
-  Styles: Holistic, CBT-focused
-  Lived experience: First-generation college graduate, Veteran
-  Languages: English, ASL
-  Licensed states: NV
-  Insurance: BCBS, Humana, United Healthcare
-  Email: zoe.johnson@amsconnects.example
-prov_112	Aiden Wilson (LMFT) — Therapy
-  Styles: Holistic, CBT-focused
-  Lived experience: Parent, Experienced grief/loss
-  Languages: English, ASL
-  Licensed states: NV
-  Insurance: BCBS, Cigna, United Healthcare, Cash Pay
-  Email: aiden.wilson@amsconnects.example
-prov_113	Mia Kim (MD) — Psychiatry
-  Styles: Direct, Compassionate
-  Lived experience: Experienced grief/loss, First-generation college graduate
-  Languages: English, Hindi
-  Licensed states: NH
-  Insurance: Aetna, BCBS, Medicare, Cash Pay
-  Email: mia.kim@amsconnects.example
-prov_114	Logan King (PsyD) — Psychiatry
-  Styles: CBT-focused, Compassionate
-  Lived experience: Veteran, Child of immigrants
-  Languages: English, Arabic
-  Licensed states: NH
-  Insurance: United Healthcare, Medicare, Medicaid, Cash Pay
-  Email: logan.king@amsconnects.example
-prov_115	Hannah Johnson (PsyD) — Therapy
-  Styles: Compassionate, Holistic
-  Lived experience: Child of immigrants, Immigrant background
-  Languages: English, Arabic
-  Licensed states: NH
-  Insurance: Aetna, Humana, Cash Pay
-  Email: hannah.johnson@amsconnects.example
-prov_116	William Young (LCSW) — Therapy
-  Styles: Mindfulness-based, Holistic
-  Lived experience: Chronic illness survivor, Veteran
-  Languages: English, Spanish
-  Licensed states: NH
-  Insurance: BCBS, United Healthcare, Medicare, Cash Pay
-  Email: william.young@amsconnects.example
-prov_117	Chloe Lewis (PMHNP) — Psychiatry
-  Styles: Mindfulness-based, Trauma-informed
-  Lived experience: Child of immigrants, Immigrant background
-  Languages: English, Arabic
-  Licensed states: NJ
-  Insurance: Aetna, Medicare, Medicaid, Cash Pay
-  Email: chloe.lewis@amsconnects.example
-prov_118	Samuel King (DO) — Psychiatry
-  Styles: Mindfulness-based, CBT-focused
-  Lived experience: First-generation college graduate, Chronic illness survivor
-  Languages: English, French
-  Licensed states: NJ
-  Insurance: BCBS, Humana, Medicaid, Cash Pay
-  Email: samuel.king@amsconnects.example
-prov_119	Zoe Young (LPC) — Therapy
-  Styles: Goal-oriented, Direct
-  Lived experience: Chronic illness survivor, Veteran
-  Languages: English, Spanish
-  Licensed states: NJ
-  Insurance: Aetna, BCBS, Humana, Cash Pay
-  Email: zoe.young@amsconnects.example
-prov_120	Benjamin Scott (LMFT) — Therapy
-  Styles: CBT-focused, Compassionate
-  Lived experience: Former teacher, Child of immigrants
-  Languages: English, Hindi
-  Licensed states: NJ
-  Insurance: Aetna, Medicare, Cash Pay
-  Email: benjamin.scott@amsconnects.example
-prov_121	Aria Baker (MD) — Psychiatry
-  Styles: Goal-oriented, Trauma-informed
-  Lived experience: Immigrant background, Neurodivergent
-  Languages: English, Spanish
-  Licensed states: NM
-  Insurance: BCBS, Humana, Medicare, Cash Pay
-  Email: aria.baker@amsconnects.example
-prov_122	Mason Martinez (PMHNP) — Psychiatry
-  Styles: Compassionate, Mindfulness-based
-  Lived experience: Former teacher, First-generation college graduate
-  Languages: English, ASL
-  Licensed states: NM
-  Insurance: United Healthcare, Medicaid, Cash Pay
-  Email: mason.martinez@amsconnects.example
-prov_123	Aurora Lewis (PsyD) — Therapy
-  Styles: Compassionate, Trauma-informed
-  Lived experience: Immigrant background, Parent
-  Languages: English, Mandarin
-  Licensed states: NM
-  Insurance: Cigna, United Healthcare, Medicare
-  Email: aurora.lewis@amsconnects.example
-prov_124	Benjamin Henderson (LMFT) — Therapy
-  Styles: Holistic, Direct
-  Lived experience: Former teacher, Neurodivergent
-  Languages: English, Spanish
-  Licensed states: NM
-  Insurance: Cigna, Medicare, Medicaid
-  Email: benjamin.henderson@amsconnects.example
-prov_125	Sophia King (DO) — Psychiatry
-  Styles: Mindfulness-based, CBT-focused
-  Lived experience: Chronic illness survivor, Experienced grief/loss
-  Languages: English, Mandarin
-  Licensed states: NY
-  Insurance: Cigna, Medicare, Cash Pay
-  Email: sophia.king@amsconnects.example
-prov_126	Owen Lewis (MD) — Psychiatry
-  Styles: Compassionate, Goal-oriented
-  Lived experience: LGBTQ+ affirming, Parent
-  Languages: English, Portuguese
-  Licensed states: NY
-  Insurance: BCBS, Cigna, Humana
-  Email: owen.lewis@amsconnects.example
-prov_127	Lily Lewis (PhD) — Therapy
-  Styles: Mindfulness-based, Goal-oriented
-  Lived experience: First-generation college graduate, Former teacher
-  Languages: English, Spanish
-  Licensed states: NY
-  Insurance: Aetna, Humana, Medicare, Cash Pay
-  Email: lily.lewis@amsconnects.example
-prov_128	Owen Moore (PsyD) — Therapy
-  Styles: Trauma-informed, Goal-oriented
-  Lived experience: Parent, Immigrant background
-  Languages: English, Arabic
-  Licensed states: NY
-  Insurance: Aetna, BCBS, Cash Pay
-  Email: owen.moore@amsconnects.example
-prov_129	Isabella Wright (DO) — Psychiatry
-  Styles: Holistic, Goal-oriented
-  Lived experience: Immigrant background, Neurodivergent
-  Languages: English, Spanish
-  Licensed states: NC
-  Insurance: Aetna, Humana, Medicare, Cash Pay
-  Email: isabella.wright@amsconnects.example
-prov_130	Logan Anderson (DO) — Psychiatry
-  Styles: CBT-focused, Trauma-informed
-  Lived experience: Experienced grief/loss, Veteran
-  Languages: English, Arabic
-  Licensed states: NC
-  Insurance: Aetna, Humana, Cash Pay
-  Email: logan.anderson@amsconnects.example
-prov_131	Sophia Baker (LPC) — Therapy
-  Styles: CBT-focused, Mindfulness-based
-  Lived experience: Former teacher, Neurodivergent
-  Languages: English, Portuguese
-  Licensed states: NC
-  Insurance: Aetna, Cigna, Medicaid, Cash Pay
-  Email: sophia.baker@amsconnects.example
-prov_132	James Nguyen (PsyD) — Therapy
-  Styles: Mindfulness-based, Holistic
-  Lived experience: Experienced grief/loss, Veteran
-  Languages: English, Arabic
-  Licensed states: NC
-  Insurance: BCBS, Humana, Cash Pay
-  Email: james.nguyen@amsconnects.example
-prov_133	Hannah Lopez (PsyD) — Psychiatry
-  Styles: Holistic, Goal-oriented
-  Lived experience: Experienced grief/loss, First-generation college graduate
-  Languages: English, French
-  Licensed states: ND
-  Insurance: Aetna, Cigna, United Healthcare
-  Email: hannah.lopez@amsconnects.example
-prov_134	Daniel White (DO) — Psychiatry
-  Styles: Holistic, Goal-oriented
-  Lived experience: Experienced grief/loss, LGBTQ+ affirming
-  Languages: English, Mandarin
-  Licensed states: ND
-  Insurance: BCBS, Cigna, Cash Pay
-  Email: daniel.white@amsconnects.example
-prov_135	Aurora Patel (LCSW) — Therapy
-  Styles: Direct, Holistic
-  Lived experience: Chronic illness survivor, Child of immigrants
-  Languages: English, ASL
-  Licensed states: ND
-  Insurance: United Healthcare, Medicare, Cash Pay
-  Email: aurora.patel@amsconnects.example
-prov_136	Wyatt Wilson (LPC) — Therapy
-  Styles: Direct, CBT-focused
-  Lived experience: Veteran, Child of immigrants
-  Languages: English, Arabic
-  Licensed states: ND
-  Insurance: Cigna, United Healthcare, Medicaid
-  Email: wyatt.wilson@amsconnects.example
-prov_137	Layla White (MD) — Psychiatry
-  Styles: Goal-oriented, CBT-focused
-  Lived experience: Chronic illness survivor, Parent
-  Languages: English, Spanish
-  Licensed states: OH
-  Insurance: Cigna, Medicare, Medicaid, Cash Pay
-  Email: layla.white@amsconnects.example
-prov_138	Ethan Lewis (PsyD) — Psychiatry
-  Styles: Mindfulness-based, Trauma-informed
-  Lived experience: Child of immigrants, Parent
-  Languages: English, Arabic
-  Licensed states: OH
-  Insurance: Cigna, Humana, United Healthcare, Cash Pay
-  Email: ethan.lewis@amsconnects.example
-prov_139	Ava Garcia (PhD) — Therapy
-  Styles: Compassionate, Mindfulness-based
-  Lived experience: Veteran, Former teacher
-  Languages: English, Portuguese
-  Licensed states: OH
-  Insurance: Aetna, BCBS, Cigna
-  Email: ava.garcia@amsconnects.example
-prov_140	Michael White (PsyD) — Therapy
-  Styles: CBT-focused, Direct
-  Lived experience: Experienced grief/loss, Neurodivergent
-  Languages: English, French
-  Licensed states: OH
-  Insurance: Cigna, Humana, Medicaid
-  Email: michael.white@amsconnects.example
-prov_141	Olivia Scott (PMHNP) — Psychiatry
-  Styles: Compassionate, Mindfulness-based
-  Lived experience: Veteran, Former teacher
-  Languages: English, Portuguese
-  Licensed states: OK
-  Insurance: Cigna, Medicaid, Cash Pay
-  Email: olivia.scott@amsconnects.example
-prov_142	Wyatt Baker (DO) — Psychiatry
-  Styles: Goal-oriented, Compassionate
-  Lived experience: Former teacher, LGBTQ+ affirming
-  Languages: English, French
-  Licensed states: OK
-  Insurance: United Healthcare, Medicare, Medicaid
-  Email: wyatt.baker@amsconnects.example
-prov_143	Ava Lewis (LCSW) — Therapy
-  Styles: Goal-oriented, Trauma-informed
-  Lived experience: Neurodivergent, Experienced grief/loss
-  Languages: English, ASL
-  Licensed states: OK
-  Insurance: Cigna, Medicare, Medicaid
-  Email: ava.lewis@amsconnects.example
-prov_144	Daniel Lopez (PhD) — Therapy
-  Styles: CBT-focused, Goal-oriented
-  Lived experience: Parent, Neurodivergent
-  Languages: English, French
-  Licensed states: OK
-  Insurance: BCBS, Cigna, Cash Pay
-  Email: daniel.lopez@amsconnects.example
-prov_145	Lily Smith (DO) — Psychiatry
-  Styles: Direct, Goal-oriented
-  Lived experience: Veteran, Experienced grief/loss
-  Languages: English, ASL
-  Licensed states: OR
-  Insurance: BCBS, United Healthcare, Medicaid
-  Email: lily.smith@amsconnects.example
-prov_146	Daniel Garcia (PMHNP) — Psychiatry
-  Styles: Holistic, CBT-focused
-  Lived experience: LGBTQ+ affirming, Chronic illness survivor
-  Languages: English, Mandarin
-  Licensed states: OR
-  Insurance: BCBS, Cigna, Medicare
-  Email: daniel.garcia@amsconnects.example
-prov_147	Mia King (PhD) — Therapy
-  Styles: Compassionate, CBT-focused
-  Lived experience: Experienced grief/loss, First-generation college graduate
-  Languages: English, Arabic
-  Licensed states: OR
-  Insurance: United Healthcare, Medicare, Medicaid
-  Email: mia.king@amsconnects.example
-prov_148	Aiden Harris (LMFT) — Therapy
-  Styles: Goal-oriented, CBT-focused
-  Lived experience: First-generation college graduate, Neurodivergent
-  Languages: English, Portuguese
-  Licensed states: OR
-  Insurance: Cigna, Humana, Cash Pay
-  Email: aiden.harris@amsconnects.example
-prov_149	Hannah White (PsyD) — Psychiatry
-  Styles: Direct, Goal-oriented
-  Lived experience: Former teacher, LGBTQ+ affirming
-  Languages: English, ASL
-  Licensed states: PA
-  Insurance: Aetna, United Healthcare, Medicare, Cash Pay
-  Email: hannah.white@amsconnects.example
-prov_150	Benjamin Harris (MD) — Psychiatry
-  Styles: Trauma-informed, CBT-focused
-  Lived experience: Veteran, Experienced grief/loss
-  Languages: English, Spanish
-  Licensed states: PA
-  Insurance: Cigna, Humana, Cash Pay
-  Email: benjamin.harris@amsconnects.example
-prov_151	Ava Green (PhD) — Therapy
-  Styles: Compassionate, Goal-oriented
-  Lived experience: Chronic illness survivor, Experienced grief/loss
-  Languages: English, Spanish
-  Licensed states: PA
-  Insurance: Aetna, Humana, Medicaid
-  Email: ava.green@amsconnects.example
-prov_152	Aiden Anderson (LCSW) — Therapy
-  Styles: Goal-oriented, Direct
-  Lived experience: Parent, Neurodivergent
-  Languages: English, Spanish
-  Licensed states: PA
-  Insurance: BCBS, Medicare, Medicaid, Cash Pay
-  Email: aiden.anderson@amsconnects.example
-prov_153	Amelia Nelson (PsyD) — Psychiatry
-  Styles: Trauma-informed, Direct
-  Lived experience: Chronic illness survivor, Child of immigrants
-  Languages: English, Hindi
-  Licensed states: RI
-  Insurance: Aetna, Medicaid, Cash Pay
-  Email: amelia.nelson@amsconnects.example
-prov_154	Logan Harris (PsyD) — Psychiatry
-  Styles: Compassionate, Mindfulness-based
-  Lived experience: First-generation college graduate, Experienced grief/loss
-  Languages: English, Spanish
-  Licensed states: RI
-  Insurance: Aetna, BCBS, Humana
-  Email: logan.harris@amsconnects.example
-prov_155	Aurora Taylor (LCSW) — Therapy
-  Styles: Compassionate, CBT-focused
-  Lived experience: Former teacher, Child of immigrants
-  Languages: English, Spanish
-  Licensed states: RI
-  Insurance: BCBS, Humana, Medicare, Cash Pay
-  Email: aurora.taylor@amsconnects.example
-prov_156	Liam Lewis (LPC) — Therapy
-  Styles: Direct, Trauma-informed
-  Lived experience: Neurodivergent, LGBTQ+ affirming
-  Languages: English, Portuguese
-  Licensed states: RI
-  Insurance: BCBS, Cigna, United Healthcare, Cash Pay
-  Email: liam.lewis@amsconnects.example
-prov_157	Hannah Harris (MD) — Psychiatry
-  Styles: Mindfulness-based, CBT-focused
-  Lived experience: Parent, Chronic illness survivor
-  Languages: English, French
-  Licensed states: SC
-  Insurance: Aetna, United Healthcare, Medicare, Cash Pay
-  Email: hannah.harris@amsconnects.example
-prov_158	Ethan Martinez (DO) — Psychiatry
-  Styles: Trauma-informed, Holistic
-  Lived experience: Veteran, Neurodivergent
-  Languages: English, Mandarin
-  Licensed states: SC
-  Insurance: Aetna, Cigna, United Healthcare, Cash Pay
-  Email: ethan.martinez@amsconnects.example
-prov_159	Mia Green (PhD) — Therapy
-  Styles: Trauma-informed, Mindfulness-based
-  Lived experience: LGBTQ+ affirming, First-generation college graduate
-  Languages: English, Spanish
-  Licensed states: SC
-  Insurance: Aetna, Cigna, Cash Pay
-  Email: mia.green@amsconnects.example
-prov_160	Jackson Adams (LCSW) — Therapy
-  Styles: Goal-oriented, Mindfulness-based
-  Lived experience: Child of immigrants, Neurodivergent
-  Languages: English, ASL
-  Licensed states: SC
-  Insurance: Aetna, Cigna, Cash Pay
-  Email: jackson.adams@amsconnects.example
-prov_161	Isabella Davis (PMHNP) — Psychiatry
-  Styles: Holistic, Compassionate
-  Lived experience: Experienced grief/loss, Immigrant background
-  Languages: English, Spanish
-  Licensed states: SD
-  Insurance: Humana, United Healthcare, Medicare, Medicaid
-  Email: isabella.davis@amsconnects.example
-prov_162	Henry Wilson (DO) — Psychiatry
-  Styles: Mindfulness-based, Holistic
-  Lived experience: Chronic illness survivor, Experienced grief/loss
-  Languages: English, ASL
-  Licensed states: SD
-  Insurance: Aetna, United Healthcare, Medicaid
-  Email: henry.wilson@amsconnects.example
-prov_163	Sophia Thomas (PsyD) — Therapy
-  Styles: Holistic, Direct
-  Lived experience: Child of immigrants, Immigrant background
-  Languages: English, French
-  Licensed states: SD
-  Insurance: Aetna, BCBS, Cigna
-  Email: sophia.thomas@amsconnects.example
-prov_164	Elijah Taylor (PsyD) — Therapy
-  Styles: Trauma-informed, Mindfulness-based
-  Lived experience: LGBTQ+ affirming, Child of immigrants
-  Languages: English, French
-  Licensed states: SD
-  Insurance: Aetna, Medicare, Cash Pay
-  Email: elijah.taylor@amsconnects.example
-prov_165	Layla Lewis (PsyD) — Psychiatry
-  Styles: Goal-oriented, Holistic
-  Lived experience: Parent, LGBTQ+ affirming
-  Languages: English, Portuguese
-  Licensed states: TN
-  Insurance: Cigna, United Healthcare, Medicaid
-  Email: layla.lewis@amsconnects.example
-prov_166	Lucas Henderson (DO) — Psychiatry
-  Styles: Holistic, CBT-focused
-  Lived experience: Chronic illness survivor, Parent
-  Languages: English, Mandarin
-  Licensed states: TN
-  Insurance: BCBS, Medicare, Cash Pay
-  Email: lucas.henderson@amsconnects.example
-prov_167	Ella Clark (LCSW) — Therapy
-  Styles: CBT-focused, Direct
-  Lived experience: Chronic illness survivor, Experienced grief/loss
-  Languages: English, French
-  Licensed states: TN
-  Insurance: Aetna, Medicaid, Cash Pay
-  Email: ella.clark@amsconnects.example
-prov_168	Daniel Martinez (PhD) — Therapy
-  Styles: Goal-oriented, Holistic
-  Lived experience: Immigrant background, First-generation college graduate
-  Languages: English, Spanish
-  Licensed states: TN
-  Insurance: Aetna, BCBS, Medicare, Cash Pay
-  Email: daniel.martinez@amsconnects.example
-prov_169	Ella Nelson (MD) — Psychiatry
-  Styles: Goal-oriented, Mindfulness-based
-  Lived experience: Chronic illness survivor, First-generation college graduate
-  Languages: English, Hindi
-  Licensed states: TX
-  Insurance: Humana, United Healthcare, Medicare, Cash Pay
-  Email: ella.nelson@amsconnects.example
-prov_170	Logan Baker (MD) — Psychiatry
-  Styles: Mindfulness-based, Direct
-  Lived experience: Chronic illness survivor, Veteran
-  Languages: English, ASL
-  Licensed states: TX
-  Insurance: Cigna, Medicare, Cash Pay
-  Email: logan.baker@amsconnects.example
-prov_171	Aaliyah Harris (LPC) — Therapy
-  Styles: Goal-oriented, Direct
-  Lived experience: LGBTQ+ affirming, Neurodivergent
-  Languages: English, Hindi
-  Licensed states: TX
-  Insurance: Aetna, BCBS, Humana
-  Email: aaliyah.harris@amsconnects.example
-prov_172	Aiden Scott (PhD) — Therapy
-  Styles: Compassionate, Mindfulness-based
-  Lived experience: Child of immigrants, Experienced grief/loss
-  Languages: English, Arabic
-  Licensed states: TX
-  Insurance: Aetna, Cigna, United Healthcare, Cash Pay
-  Email: aiden.scott@amsconnects.example
-prov_173	Ella Allen (PsyD) — Psychiatry
-  Styles: CBT-focused, Mindfulness-based
-  Lived experience: Neurodivergent, Veteran
-  Languages: English, Mandarin
-  Licensed states: UT
-  Insurance: Aetna, Medicare, Cash Pay
-  Email: ella.allen@amsconnects.example
-prov_174	Daniel Martinez (DO) — Psychiatry
-  Styles: Holistic, CBT-focused
-  Lived experience: Former teacher, LGBTQ+ affirming
-  Languages: English, ASL
-  Licensed states: UT
-  Insurance: Cigna, Humana, United Healthcare
-  Email: daniel.martinez@amsconnects.example
-prov_175	Olivia Green (LCSW) — Therapy
-  Styles: CBT-focused, Direct
-  Lived experience: Immigrant background, LGBTQ+ affirming
-  Languages: English, Mandarin
-  Licensed states: UT
-  Insurance: BCBS, Medicare, Cash Pay
-  Email: olivia.green@amsconnects.example
-prov_176	Daniel Adams (LPC) — Therapy
-  Styles: Holistic, Compassionate
-  Lived experience: Immigrant background, First-generation college graduate
-  Languages: English, Portuguese
-  Licensed states: UT
-  Insurance: BCBS, United Healthcare, Medicare, Cash Pay
-  Email: daniel.adams@amsconnects.example
-prov_177	Aaliyah Lopez (DO) — Psychiatry
-  Styles: CBT-focused, Trauma-informed
-  Lived experience: LGBTQ+ affirming, First-generation college graduate
-  Languages: English, Portuguese
-  Licensed states: VT
-  Insurance: United Healthcare, Medicare, Medicaid, Cash Pay
-  Email: aaliyah.lopez@amsconnects.example
-prov_178	Liam Lopez (MD) — Psychiatry
-  Styles: Trauma-informed, CBT-focused
-  Lived experience: Immigrant background, First-generation college graduate
-  Languages: English, ASL
-  Licensed states: VT
-  Insurance: United Healthcare, Medicare, Medicaid, Cash Pay
-  Email: liam.lopez@amsconnects.example
-prov_179	Aaliyah Davis (LPC) — Therapy
-  Styles: Mindfulness-based, Direct
-  Lived experience: Neurodivergent, Immigrant background
-  Languages: English, Arabic
-  Licensed states: VT
-  Insurance: Aetna, BCBS, Medicare, Cash Pay
-  Email: aaliyah.davis@amsconnects.example
-prov_180	William Moore (PhD) — Therapy
-  Styles: Direct, Mindfulness-based
-  Lived experience: Former teacher, LGBTQ+ affirming
-  Languages: English, French
-  Licensed states: VT
-  Insurance: Cigna, Medicare, Cash Pay
-  Email: william.moore@amsconnects.example
-prov_181	Ava Wright (PMHNP) — Psychiatry
-  Styles: CBT-focused, Trauma-informed
-  Lived experience: Veteran, Neurodivergent
-  Languages: English, Mandarin
-  Licensed states: VA
-  Insurance: Aetna, Cigna, Cash Pay
-  Email: ava.wright@amsconnects.example
-prov_182	Logan Kim (MD) — Psychiatry
-  Styles: Goal-oriented, CBT-focused
-  Lived experience: Former teacher, Neurodivergent
-  Languages: English, Mandarin
-  Licensed states: VA
-  Insurance: Cigna, Medicaid, Cash Pay
-  Email: logan.kim@amsconnects.example
-prov_183	Zoe Smith (LMFT) — Therapy
-  Styles: Mindfulness-based, Trauma-informed
-  Lived experience: Chronic illness survivor, Child of immigrants
-  Languages: English, French
-  Licensed states: VA
-  Insurance: Aetna, Medicaid, Cash Pay
-  Email: zoe.smith@amsconnects.example
-prov_184	Daniel Taylor (LMFT) — Therapy
-  Styles: Direct, Trauma-informed
-  Lived experience: Experienced grief/loss, Parent
-  Languages: English, Spanish
-  Licensed states: VA
-  Insurance: Humana, United Healthcare, Cash Pay
-  Email: daniel.taylor@amsconnects.example
-prov_185	Lily Davis (MD) — Psychiatry
-  Styles: Holistic, Compassionate
-  Lived experience: Neurodivergent, LGBTQ+ affirming
-  Languages: English, French
-  Licensed states: WA
-  Insurance: Cigna, Humana, Medicare, Medicaid, Cash Pay
-  Email: lily.davis@amsconnects.example
-prov_186	Noah Clark (DO) — Psychiatry
-  Styles: Goal-oriented, Trauma-informed
-  Lived experience: Immigrant background, Veteran
-  Languages: English, Arabic
-  Licensed states: WA
-  Insurance: United Healthcare, Medicaid, Cash Pay
-  Email: noah.clark@amsconnects.example
-prov_187	Aurora Young (PsyD) — Therapy
-  Styles: Compassionate, Goal-oriented
-  Lived experience: Veteran, Chronic illness survivor
-  Languages: English, French
-  Licensed states: WA
-  Insurance: Cigna, United Healthcare, Medicare
-  Email: aurora.young@amsconnects.example
-prov_188	Jackson Lewis (PsyD) — Therapy
-  Styles: Mindfulness-based, Trauma-informed
-  Lived experience: Parent, Veteran
-  Languages: English, Spanish
-  Licensed states: WA
-  Insurance: Cigna, Medicare, Cash Pay
-  Email: jackson.lewis@amsconnects.example
-prov_189	Hannah Taylor (DO) — Psychiatry
-  Styles: CBT-focused, Trauma-informed
-  Lived experience: LGBTQ+ affirming, Neurodivergent
-  Languages: English, Hindi
-  Licensed states: WV
-  Insurance: BCBS, Humana, Medicare
-  Email: hannah.taylor@amsconnects.example
-prov_190	Elijah Clark (PMHNP) — Psychiatry
-  Styles: CBT-focused, Trauma-informed
-  Lived experience: Child of immigrants, Chronic illness survivor
-  Languages: English, Portuguese
-  Licensed states: WV
-  Insurance: Aetna, Humana, United Healthcare, Cash Pay
-  Email: elijah.clark@amsconnects.example
-prov_191	Emily Thomas (PsyD) — Therapy
-  Styles: Goal-oriented, Holistic
-  Lived experience: Parent, Child of immigrants
-  Languages: English, French
-  Licensed states: WV
-  Insurance: Aetna, Humana, Medicare
-  Email: emily.thomas@amsconnects.example
-prov_192	Lucas White (PsyD) — Therapy
-  Styles: Holistic, Mindfulness-based
-  Lived experience: LGBTQ+ affirming, Immigrant background
-  Languages: English, Spanish
-  Licensed states: WV
-  Insurance: Aetna, BCBS, Cash Pay
-  Email: lucas.white@amsconnects.example
-prov_193	Aria Patel (PsyD) — Psychiatry
-  Styles: Trauma-informed, Direct
-  Lived experience: Neurodivergent, Former teacher
-  Languages: English, ASL
-  Licensed states: WI
-  Insurance: BCBS, Medicare, Medicaid, Cash Pay
-  Email: aria.patel@amsconnects.example
-prov_194	Daniel Smith (PMHNP) — Psychiatry
-  Styles: Trauma-informed, Mindfulness-based
-  Lived experience: Child of immigrants, Neurodivergent
-  Languages: English, French
-  Licensed states: WI
-  Insurance: Cigna, Humana, United Healthcare, Cash Pay
+  Insurance: Humana, Aetna, Cash Pay
   Email: daniel.smith@amsconnects.example
-prov_195	Layla Young (LPC) — Therapy
-  Styles: CBT-focused, Mindfulness-based
-  Lived experience: First-generation college graduate, Immigrant background
+prov_005	Harper Taylor (LMFT) — Therapy
+  Styles: Compassionate listening, Trauma-informed
+  Lived experience: Former teacher, Veteran
+  Languages: English, ASL
+  Licensed states: AK
+  Insurance: United Healthcare, Humana, Cash Pay
+  Email: harper.taylor@amsconnects.example
+prov_006	Aiden Taylor (LMFT) — Therapy
+  Styles: Compassionate listening, CBT-focused
+  Lived experience: First-generation college student, LGBTQ+ affirming
   Languages: English, French
-  Licensed states: WI
-  Insurance: BCBS, Cigna, United Healthcare
-  Email: layla.young@amsconnects.example
-prov_196	Jackson Allen (PhD) — Therapy
-  Styles: Goal-oriented, CBT-focused
+  Licensed states: AK
+  Insurance: Cigna, United Healthcare, Cash Pay
+  Email: aiden.taylor@amsconnects.example
+prov_007	Amelia Smith (PMHNP) — Psychiatry
+  Styles: Holistic, CBT-focused
+  Lived experience: Parent, Experienced grief/loss
+  Languages: English
+  Licensed states: AK
+  Insurance: BCBS, Cigna, Cash Pay
+  Email: amelia.smith@amsconnects.example
+prov_008	Aiden Smith (PMHNP) — Psychiatry
+  Styles: Mindfulness-based, Strength-based
+  Lived experience: Experienced grief/loss, Former teacher
+  Languages: English, French
+  Licensed states: AK
+  Insurance: Humana, BCBS, Cash Pay
+  Email: aiden.smith@amsconnects.example
+prov_009	Emily Brown (LMFT) — Therapy
+  Styles: Strength-based, Mindfulness-based
+  Lived experience: Rural healthcare advocate, LGBTQ+ affirming
+  Languages: English
+  Licensed states: AZ
+  Insurance: Cigna, Medicaid, Cash Pay
+  Email: emily.brown@amsconnects.example
+prov_010	Aiden Johnson (LMFT) — Therapy
+  Styles: Strength-based, Mindfulness-based
+  Lived experience: First-generation college student, Experienced grief/loss
+  Languages: English, Portuguese
+  Licensed states: AZ
+  Insurance: BCBS, Medicaid, Cash Pay
+  Email: aiden.johnson@amsconnects.example
+prov_011	Harper Harris (PMHNP) — Psychiatry
+  Styles: Motivational interviewing, Strength-based
+  Lived experience: LGBTQ+ affirming, Veteran
+  Languages: English, Mandarin
+  Licensed states: AZ
+  Insurance: Medicaid, Aetna, Cash Pay
+  Email: harper.harris@amsconnects.example
+prov_012	Liam Taylor (PMHNP) — Psychiatry
+  Styles: Direct, Goal-oriented, CBT-focused
+  Lived experience: First-generation college student, Veteran
+  Languages: English
+  Licensed states: AZ
+  Insurance: United Healthcare, BCBS, Cash Pay
+  Email: liam.taylor@amsconnects.example
+prov_013	Isabella Anderson (LMFT) — Therapy
+  Styles: Trauma-informed, Compassionate listening
+  Lived experience: Veteran, Immigrant background
+  Languages: English, Mandarin
+  Licensed states: AR
+  Insurance: Medicaid, United Healthcare, Cash Pay
+  Email: isabella.anderson@amsconnects.example
+prov_014	Mason Thomas (LMFT) — Therapy
+  Styles: Holistic, Compassionate listening
+  Lived experience: Immigrant background, LGBTQ+ affirming
+  Languages: English, French
+  Licensed states: AR
+  Insurance: BCBS, Aetna, Cash Pay
+  Email: mason.thomas@amsconnects.example
+prov_015	Isabella White (PMHNP) — Psychiatry
+  Styles: Holistic, Motivational interviewing
+  Lived experience: Immigrant background, LGBTQ+ affirming
+  Languages: English, Arabic
+  Licensed states: AR
+  Insurance: Cigna, Aetna, Cash Pay
+  Email: isabella.white@amsconnects.example
+prov_016	Daniel Thomas (PMHNP) — Psychiatry
+  Styles: Trauma-informed, Direct, Goal-oriented
+  Lived experience: Experienced grief/loss, Rural healthcare advocate
+  Languages: English, Spanish
+  Licensed states: AR
+  Insurance: United Healthcare, Humana, Cash Pay
+  Email: daniel.thomas@amsconnects.example
+prov_017	Olivia Smith (LMFT) — Therapy
+  Styles: Mindfulness-based, Compassionate listening
+  Lived experience: Immigrant background, Experienced grief/loss
+  Languages: English, Mandarin
+  Licensed states: CA
+  Insurance: Aetna, United Healthcare, Cash Pay
+  Email: olivia.smith@amsconnects.example
+prov_018	Logan Smith (LMFT) — Therapy
+  Styles: Direct, Goal-oriented, Strength-based
+  Lived experience: Parent, LGBTQ+ affirming
+  Languages: English
+  Licensed states: CA
+  Insurance: BCBS, United Healthcare, Cash Pay
+  Email: logan.smith@amsconnects.example
+prov_019	Charlotte Harris (PMHNP) — Psychiatry
+  Styles: Trauma-informed, Mindfulness-based
+  Lived experience: Former teacher, First-generation college student
+  Languages: English
+  Licensed states: CA
+  Insurance: Aetna, BCBS, Cash Pay
+  Email: charlotte.harris@amsconnects.example
+prov_020	James Smith (PMHNP) — Psychiatry
+  Styles: Trauma-informed, Compassionate listening
+  Lived experience: Immigrant background, Experienced grief/loss
+  Languages: English
+  Licensed states: CA
+  Insurance: Medicaid, United Healthcare, Cash Pay
+  Email: james.smith@amsconnects.example
+prov_021	Charlotte Brown (LMFT) — Therapy
+  Styles: Holistic, Direct, Goal-oriented
+  Lived experience: Rural healthcare advocate, Experienced grief/loss
+  Languages: English, Hindi
+  Licensed states: CO
+  Insurance: Cigna, Medicaid, Cash Pay
+  Email: charlotte.brown@amsconnects.example
+prov_022	Elijah Brown (LMFT) — Therapy
+  Styles: Compassionate listening, Mindfulness-based
+  Lived experience: LGBTQ+ affirming, Immigrant background
+  Languages: English, German
+  Licensed states: CO
+  Insurance: Cigna, Aetna, Cash Pay
+  Email: elijah.brown@amsconnects.example
+prov_023	Sophia Johnson (PMHNP) — Psychiatry
+  Styles: Mindfulness-based, Trauma-informed
+  Lived experience: Former teacher, Rural healthcare advocate
+  Languages: English, Portuguese
+  Licensed states: CO
+  Insurance: Aetna, Humana, Cash Pay
+  Email: sophia.johnson@amsconnects.example
+prov_024	Aiden Brown (PMHNP) — Psychiatry
+  Styles: Compassionate listening, Direct, Goal-oriented
+  Lived experience: Parent, First-generation college student
+  Languages: English, ASL
+  Licensed states: CO
+  Insurance: Medicaid, United Healthcare, Cash Pay
+  Email: aiden.brown@amsconnects.example
+prov_025	Emma Brown (LMFT) — Therapy
+  Styles: Compassionate listening, Strength-based
+  Lived experience: Rural healthcare advocate, LGBTQ+ affirming
+  Languages: English, Mandarin
+  Licensed states: CT
+  Insurance: Medicaid, Cigna, Cash Pay
+  Email: emma.brown@amsconnects.example
+prov_026	Elijah Thomas (LMFT) — Therapy
+  Styles: Mindfulness-based, Trauma-informed
+  Lived experience: Immigrant background, Parent
+  Languages: English
+  Licensed states: CT
+  Insurance: United Healthcare, Aetna, Cash Pay
+  Email: elijah.thomas@amsconnects.example
+prov_027	Mia Johnson (PMHNP) — Psychiatry
+  Styles: Motivational interviewing, Strength-based
+  Lived experience: First-generation college student, Immigrant background
+  Languages: English, Arabic
+  Licensed states: CT
+  Insurance: Medicaid, BCBS, Cash Pay
+  Email: mia.johnson@amsconnects.example
+prov_028	Noah White (PMHNP) — Psychiatry
+  Styles: Mindfulness-based, Trauma-informed
+  Lived experience: Former teacher, Veteran
+  Languages: English
+  Licensed states: CT
+  Insurance: Humana, Cigna, Cash Pay
+  Email: noah.white@amsconnects.example
+prov_029	Emma Jackson (LMFT) — Therapy
+  Styles: Motivational interviewing, CBT-focused
+  Lived experience: Veteran, Rural healthcare advocate
+  Languages: English, Mandarin
+  Licensed states: DE
+  Insurance: Aetna, United Healthcare, Cash Pay
+  Email: emma.jackson@amsconnects.example
+prov_030	Lucas Harris (LMFT) — Therapy
+  Styles: Compassionate listening, Strength-based
+  Lived experience: Veteran, First-generation college student
+  Languages: English
+  Licensed states: DE
+  Insurance: United Healthcare, Humana, Cash Pay
+  Email: lucas.harris@amsconnects.example
+prov_031	Sophia Smith (PMHNP) — Psychiatry
+  Styles: Trauma-informed, Holistic
+  Lived experience: Parent, Immigrant background
+  Languages: English, Arabic
+  Licensed states: DE
+  Insurance: United Healthcare, Medicaid, Cash Pay
+  Email: sophia.smith@amsconnects.example
+prov_032	Aiden Martin (PMHNP) — Psychiatry
+  Styles: Holistic, CBT-focused
+  Lived experience: Former teacher, Parent
+  Languages: English
+  Licensed states: DE
+  Insurance: United Healthcare, Medicaid, Cash Pay
+  Email: aiden.martin@amsconnects.example
+prov_033	Olivia Thomas (LMFT) — Therapy
+  Styles: Trauma-informed, Direct, Goal-oriented
+  Lived experience: Parent, Former teacher
+  Languages: English
+  Licensed states: FL
+  Insurance: BCBS, United Healthcare, Cash Pay
+  Email: olivia.thomas@amsconnects.example
+prov_034	Liam Thomas (LMFT) — Therapy
+  Styles: Trauma-informed, Holistic
+  Lived experience: Immigrant background, Former teacher
+  Languages: English
+  Licensed states: FL
+  Insurance: BCBS, Cigna, Cash Pay
+  Email: liam.thomas@amsconnects.example
+prov_035	Amelia Thomas (PMHNP) — Psychiatry
+  Styles: Strength-based, Compassionate listening
+  Lived experience: First-generation college student, LGBTQ+ affirming
+  Languages: English
+  Licensed states: FL
+  Insurance: Humana, Medicaid, Cash Pay
+  Email: amelia.thomas@amsconnects.example
+prov_036	James Jackson (PMHNP) — Psychiatry
+  Styles: Trauma-informed, CBT-focused
+  Lived experience: LGBTQ+ affirming, Experienced grief/loss
+  Languages: English
+  Licensed states: FL
+  Insurance: Aetna, Humana, Cash Pay
+  Email: james.jackson@amsconnects.example
+prov_037	Harper White (LMFT) — Therapy
+  Styles: Strength-based, Mindfulness-based
+  Lived experience: LGBTQ+ affirming, Rural healthcare advocate
+  Languages: English, Portuguese
+  Licensed states: GA
+  Insurance: Humana, Medicaid, Cash Pay
+  Email: harper.white@amsconnects.example
+prov_038	Logan Brown (LMFT) — Therapy
+  Styles: Direct, Goal-oriented, Strength-based
+  Lived experience: Rural healthcare advocate, LGBTQ+ affirming
+  Languages: English
+  Licensed states: GA
+  Insurance: Cigna, Aetna, Cash Pay
+  Email: logan.brown@amsconnects.example
+prov_039	Emma Smith (PMHNP) — Psychiatry
+  Styles: Strength-based, Motivational interviewing
+  Lived experience: Parent, LGBTQ+ affirming
+  Languages: English
+  Licensed states: GA
+  Insurance: Cigna, United Healthcare, Cash Pay
+  Email: emma.smith@amsconnects.example
+prov_040	Elijah Harris (PMHNP) — Psychiatry
+  Styles: Direct, Goal-oriented, Compassionate listening
+  Lived experience: LGBTQ+ affirming, Veteran
+  Languages: English, German
+  Licensed states: GA
+  Insurance: Cigna, Aetna, Cash Pay
+  Email: elijah.harris@amsconnects.example
+prov_041	Sophia Brown (LMFT) — Therapy
+  Styles: Mindfulness-based, Compassionate listening
+  Lived experience: First-generation college student, Parent
+  Languages: English, Spanish
+  Licensed states: HI
+  Insurance: United Healthcare, Aetna, Cash Pay
+  Email: sophia.brown@amsconnects.example
+prov_042	Aiden Brown (LMFT) — Therapy
+  Styles: Mindfulness-based, Direct, Goal-oriented
+  Lived experience: First-generation college student, LGBTQ+ affirming
+  Languages: English
+  Licensed states: HI
+  Insurance: Cigna, Aetna, Cash Pay
+  Email: aiden.brown@amsconnects.example
+prov_043	Ava Martin (PMHNP) — Psychiatry
+  Styles: Strength-based, Motivational interviewing
+  Lived experience: Experienced grief/loss, First-generation college student
+  Languages: English
+  Licensed states: HI
+  Insurance: United Healthcare, Medicaid, Cash Pay
+  Email: ava.martin@amsconnects.example
+prov_044	Noah Jackson (PMHNP) — Psychiatry
+  Styles: Direct, Goal-oriented, Compassionate listening
+  Lived experience: Rural healthcare advocate, Experienced grief/loss
+  Languages: English
+  Licensed states: HI
+  Insurance: Cigna, Humana, Cash Pay
+  Email: noah.jackson@amsconnects.example
+prov_045	Charlotte Jackson (LMFT) — Therapy
+  Styles: Compassionate listening, CBT-focused
+  Lived experience: LGBTQ+ affirming, Former teacher
+  Languages: English
+  Licensed states: ID
+  Insurance: Aetna, Medicaid, Cash Pay
+  Email: charlotte.jackson@amsconnects.example
+prov_046	Liam Smith (LMFT) — Therapy
+  Styles: CBT-focused, Compassionate listening
+  Lived experience: LGBTQ+ affirming, Experienced grief/loss
+  Languages: English, German
+  Licensed states: ID
+  Insurance: Medicaid, Cigna, Cash Pay
+  Email: liam.smith@amsconnects.example
+prov_047	Ava Taylor (PMHNP) — Psychiatry
+  Styles: Compassionate listening, Strength-based
   Lived experience: Experienced grief/loss, Former teacher
   Languages: English, ASL
-  Licensed states: WI
-  Insurance: Aetna, Cigna, United Healthcare
-  Email: jackson.allen@amsconnects.example
-prov_197	Aaliyah Anderson (PsyD) — Psychiatry
-  Styles: Holistic, Goal-oriented
-  Lived experience: LGBTQ+ affirming, Experienced grief/loss
-  Languages: English, Spanish
-  Licensed states: WY
-  Insurance: Aetna, United Healthcare, Medicare, Cash Pay
-  Email: aaliyah.anderson@amsconnects.example
-prov_198	Michael Walker (PMHNP) — Psychiatry
-  Styles: Trauma-informed, Mindfulness-based
-  Lived experience: First-generation college graduate, Immigrant background
-  Languages: English, ASL
-  Licensed states: WY
-  Insurance: United Healthcare, Medicare, Cash Pay
-  Email: michael.walker@amsconnects.example
-prov_199	Emily Lewis (PsyD) — Therapy
-  Styles: Direct, Goal-oriented
+  Licensed states: ID
+  Insurance: United Healthcare, Aetna, Cash Pay
+  Email: ava.taylor@amsconnects.example
+prov_048	Liam Taylor (PMHNP) — Psychiatry
+  Styles: Direct, Goal-oriented, Motivational interviewing
+  Lived experience: Rural healthcare advocate, Former teacher
+  Languages: English
+  Licensed states: ID
+  Insurance: United Healthcare, Humana, Cash Pay
+  Email: liam.taylor@amsconnects.example
+prov_049	Sophia Harris (LMFT) — Therapy
+  Styles: Motivational interviewing, Trauma-informed
+  Lived experience: Parent, Immigrant background
+  Languages: English
+  Licensed states: IL
+  Insurance: Medicaid, Cigna, Cash Pay
+  Email: sophia.harris@amsconnects.example
+prov_050	Logan Brown (LMFT) — Therapy
+  Styles: Strength-based, Trauma-informed
+  Lived experience: Former teacher, Experienced grief/loss
+  Languages: English
+  Licensed states: IL
+  Insurance: Medicaid, Cigna, Cash Pay
+  Email: logan.brown@amsconnects.example
+prov_051	Harper Anderson (PMHNP) — Psychiatry
+  Styles: Mindfulness-based, Trauma-informed
+  Lived experience: Veteran, Parent
+  Languages: English
+  Licensed states: IL
+  Insurance: Cigna, United Healthcare, Cash Pay
+  Email: harper.anderson@amsconnects.example
+prov_052	Daniel Thomas (PMHNP) — Psychiatry
+  Styles: Holistic, Compassionate listening
+  Lived experience: Parent, Veteran
+  Languages: English
+  Licensed states: IL
+  Insurance: Aetna, Cigna, Cash Pay
+  Email: daniel.thomas@amsconnects.example
+prov_053	Olivia Taylor (LMFT) — Therapy
+  Styles: Trauma-informed, Strength-based
+  Lived experience: Veteran, Experienced grief/loss
+  Languages: English, German
+  Licensed states: IN
+  Insurance: Aetna, Cigna, Cash Pay
+  Email: olivia.taylor@amsconnects.example
+prov_054	Lucas Brown (LMFT) — Therapy
+  Styles: Strength-based, Holistic
+  Lived experience: Former teacher, First-generation college student
+  Languages: English
+  Licensed states: IN
+  Insurance: United Healthcare, Medicaid, Cash Pay
+  Email: lucas.brown@amsconnects.example
+prov_055	Isabella Jackson (PMHNP) — Psychiatry
+  Styles: Motivational interviewing, Strength-based
+  Lived experience: LGBTQ+ affirming, First-generation college student
+  Languages: English, Arabic
+  Licensed states: IN
+  Insurance: BCBS, Aetna, Cash Pay
+  Email: isabella.jackson@amsconnects.example
+prov_056	Liam Martin (PMHNP) — Psychiatry
+  Styles: Motivational interviewing, CBT-focused
+  Lived experience: Veteran, First-generation college student
+  Languages: English
+  Licensed states: IN
+  Insurance: Medicaid, BCBS, Cash Pay
+  Email: liam.martin@amsconnects.example
+prov_057	Amelia Smith (LMFT) — Therapy
+  Styles: Motivational interviewing, Holistic
   Lived experience: Parent, Former teacher
+  Languages: English
+  Licensed states: IA
+  Insurance: Humana, United Healthcare, Cash Pay
+  Email: amelia.smith@amsconnects.example
+prov_058	Ethan Johnson (LMFT) — Therapy
+  Styles: Holistic, Compassionate listening
+  Lived experience: Rural healthcare advocate, Veteran
+  Languages: English
+  Licensed states: IA
+  Insurance: Medicaid, Aetna, Cash Pay
+  Email: ethan.johnson@amsconnects.example
+prov_059	Harper Thomas (PMHNP) — Psychiatry
+  Styles: Strength-based, Trauma-informed
+  Lived experience: Experienced grief/loss, Rural healthcare advocate
   Languages: English, Mandarin
-  Licensed states: WY
-  Insurance: Aetna, Humana, Medicaid, Cash Pay
-  Email: emily.lewis@amsconnects.example
-prov_200	Alexander Kim (LMFT) — Therapy
-  Styles: Compassionate, Trauma-informed
-  Lived experience: LGBTQ+ affirming, Chronic illness survivor
+  Licensed states: IA
+  Insurance: United Healthcare, Aetna, Cash Pay
+  Email: harper.thomas@amsconnects.example
+prov_060	Aiden White (PMHNP) — Psychiatry
+  Styles: Compassionate listening, Direct, Goal-oriented
+  Lived experience: LGBTQ+ affirming, Former teacher
+  Languages: English
+  Licensed states: IA
+  Insurance: Cigna, Aetna, Cash Pay
+  Email: aiden.white@amsconnects.example
+prov_061	Sophia Brown (LMFT) — Therapy
+  Styles: Compassionate listening, Holistic
+  Lived experience: Rural healthcare advocate, Experienced grief/loss
+  Languages: English, Hindi
+  Licensed states: KS
+  Insurance: BCBS, Medicaid, Cash Pay
+  Email: sophia.brown@amsconnects.example
+prov_062	James Jackson (LMFT) — Therapy
+  Styles: Holistic, Direct, Goal-oriented
+  Lived experience: Veteran, LGBTQ+ affirming
+  Languages: English
+  Licensed states: KS
+  Insurance: Aetna, BCBS, Cash Pay
+  Email: james.jackson@amsconnects.example
+prov_063	Harper Johnson (PMHNP) — Psychiatry
+  Styles: Mindfulness-based, CBT-focused
+  Lived experience: Immigrant background, Veteran
+  Languages: English, Spanish
+  Licensed states: KS
+  Insurance: Aetna, Humana, Cash Pay
+  Email: harper.johnson@amsconnects.example
+prov_064	Liam Smith (PMHNP) — Psychiatry
+  Styles: Trauma-informed, CBT-focused
+  Lived experience: Veteran, Rural healthcare advocate
+  Languages: English, Arabic
+  Licensed states: KS
+  Insurance: Humana, United Healthcare, Cash Pay
+  Email: liam.smith@amsconnects.example
+prov_065	Charlotte White (LMFT) — Therapy
+  Styles: Strength-based, Trauma-informed
+  Lived experience: Veteran, LGBTQ+ affirming
+  Languages: English
+  Licensed states: KY
+  Insurance: Medicaid, BCBS, Cash Pay
+  Email: charlotte.white@amsconnects.example
+prov_066	Aiden White (LMFT) — Therapy
+  Styles: Strength-based, Holistic
+  Lived experience: Former teacher, LGBTQ+ affirming
+  Languages: English
+  Licensed states: KY
+  Insurance: BCBS, Medicaid, Cash Pay
+  Email: aiden.white@amsconnects.example
+prov_067	Amelia Martin (PMHNP) — Psychiatry
+  Styles: CBT-focused, Motivational interviewing
+  Lived experience: Former teacher, Parent
+  Languages: English
+  Licensed states: KY
+  Insurance: BCBS, Medicaid, Cash Pay
+  Email: amelia.martin@amsconnects.example
+prov_068	Mason Smith (PMHNP) — Psychiatry
+  Styles: Strength-based, Holistic
+  Lived experience: Veteran, Parent
+  Languages: English, Hindi
+  Licensed states: KY
+  Insurance: Humana, Cigna, Cash Pay
+  Email: mason.smith@amsconnects.example
+prov_069	Charlotte Johnson (LMFT) — Therapy
+  Styles: Mindfulness-based, Trauma-informed
+  Lived experience: Rural healthcare advocate, Experienced grief/loss
+  Languages: English
+  Licensed states: LA
+  Insurance: Cigna, Aetna, Cash Pay
+  Email: charlotte.johnson@amsconnects.example
+prov_070	Aiden Johnson (LMFT) — Therapy
+  Styles: Compassionate listening, Direct, Goal-oriented
+  Lived experience: LGBTQ+ affirming, Veteran
+  Languages: English
+  Licensed states: LA
+  Insurance: United Healthcare, Aetna, Cash Pay
+  Email: aiden.johnson@amsconnects.example
+prov_071	Emily Thomas (PMHNP) — Psychiatry
+  Styles: CBT-focused, Direct, Goal-oriented
+  Lived experience: Immigrant background, Experienced grief/loss
+  Languages: English, Spanish
+  Licensed states: LA
+  Insurance: BCBS, United Healthcare, Cash Pay
+  Email: emily.thomas@amsconnects.example
+prov_072	Elijah Harris (PMHNP) — Psychiatry
+  Styles: Strength-based, Holistic
+  Lived experience: Parent, Rural healthcare advocate
   Languages: English, Portuguese
+  Licensed states: LA
+  Insurance: Aetna, BCBS, Cash Pay
+  Email: elijah.harris@amsconnects.example
+prov_073	Charlotte Thomas (LMFT) — Therapy
+  Styles: Strength-based, Mindfulness-based
+  Lived experience: First-generation college student, Experienced grief/loss
+  Languages: English
+  Licensed states: ME
+  Insurance: Humana, Medicaid, Cash Pay
+  Email: charlotte.thomas@amsconnects.example
+prov_074	Ethan Harris (LMFT) — Therapy
+  Styles: Compassionate listening, Mindfulness-based
+  Lived experience: First-generation college student, LGBTQ+ affirming
+  Languages: English, German
+  Licensed states: ME
+  Insurance: Aetna, Cigna, Cash Pay
+  Email: ethan.harris@amsconnects.example
+prov_075	Isabella White (PMHNP) — Psychiatry
+  Styles: Mindfulness-based, Holistic
+  Lived experience: Rural healthcare advocate, LGBTQ+ affirming
+  Languages: English, ASL
+  Licensed states: ME
+  Insurance: BCBS, Aetna, Cash Pay
+  Email: isabella.white@amsconnects.example
+prov_076	Lucas Jackson (PMHNP) — Psychiatry
+  Styles: Trauma-informed, Direct, Goal-oriented
+  Lived experience: Veteran, LGBTQ+ affirming
+  Languages: English, German
+  Licensed states: ME
+  Insurance: BCBS, Medicaid, Cash Pay
+  Email: lucas.jackson@amsconnects.example
+prov_077	Emma Brown (LMFT) — Therapy
+  Styles: Compassionate listening, Trauma-informed
+  Lived experience: LGBTQ+ affirming, Parent
+  Languages: English
+  Licensed states: MD
+  Insurance: Cigna, Aetna, Cash Pay
+  Email: emma.brown@amsconnects.example
+prov_078	Mason Martin (LMFT) — Therapy
+  Styles: Compassionate listening, Holistic
+  Lived experience: First-generation college student, Veteran
+  Languages: English
+  Licensed states: MD
+  Insurance: United Healthcare, Cigna, Cash Pay
+  Email: mason.martin@amsconnects.example
+prov_079	Isabella Anderson (PMHNP) — Psychiatry
+  Styles: Holistic, Mindfulness-based
+  Lived experience: LGBTQ+ affirming, Veteran
+  Languages: English
+  Licensed states: MD
+  Insurance: Cigna, Medicaid, Cash Pay
+  Email: isabella.anderson@amsconnects.example
+prov_080	Noah Taylor (PMHNP) — Psychiatry
+  Styles: Holistic, Strength-based
+  Lived experience: Former teacher, Immigrant background
+  Languages: English
+  Licensed states: MD
+  Insurance: United Healthcare, Medicaid, Cash Pay
+  Email: noah.taylor@amsconnects.example
+prov_081	Ava Martin (LMFT) — Therapy
+  Styles: Trauma-informed, Strength-based
+  Lived experience: Parent, LGBTQ+ affirming
+  Languages: English, Hindi
+  Licensed states: MA
+  Insurance: Cigna, Aetna, Cash Pay
+  Email: ava.martin@amsconnects.example
+prov_082	Mason Martin (LMFT) — Therapy
+  Styles: Trauma-informed, Direct, Goal-oriented
+  Lived experience: Experienced grief/loss, Parent
+  Languages: English
+  Licensed states: MA
+  Insurance: Cigna, Humana, Cash Pay
+  Email: mason.martin@amsconnects.example
+prov_083	Amelia Johnson (PMHNP) — Psychiatry
+  Styles: Trauma-informed, Holistic
+  Lived experience: Immigrant background, Rural healthcare advocate
+  Languages: English, Arabic
+  Licensed states: MA
+  Insurance: Humana, Aetna, Cash Pay
+  Email: amelia.johnson@amsconnects.example
+prov_084	Lucas Brown (PMHNP) — Psychiatry
+  Styles: Mindfulness-based, Holistic
+  Lived experience: Experienced grief/loss, Rural healthcare advocate
+  Languages: English
+  Licensed states: MA
+  Insurance: Cigna, Aetna, Cash Pay
+  Email: lucas.brown@amsconnects.example
+prov_085	Amelia Harris (LMFT) — Therapy
+  Styles: CBT-focused, Direct, Goal-oriented
+  Lived experience: Experienced grief/loss, Parent
+  Languages: English
+  Licensed states: MI
+  Insurance: BCBS, Aetna, Cash Pay
+  Email: amelia.harris@amsconnects.example
+prov_086	Noah Anderson (LMFT) — Therapy
+  Styles: Strength-based, Holistic
+  Lived experience: Immigrant background, Rural healthcare advocate
+  Languages: English
+  Licensed states: MI
+  Insurance: Cigna, Humana, Cash Pay
+  Email: noah.anderson@amsconnects.example
+prov_087	Isabella Harris (PMHNP) — Psychiatry
+  Styles: Holistic, Motivational interviewing
+  Lived experience: LGBTQ+ affirming, Immigrant background
+  Languages: English
+  Licensed states: MI
+  Insurance: United Healthcare, BCBS, Cash Pay
+  Email: isabella.harris@amsconnects.example
+prov_088	Noah Harris (PMHNP) — Psychiatry
+  Styles: Compassionate listening, Motivational interviewing
+  Lived experience: Experienced grief/loss, Immigrant background
+  Languages: English, Arabic
+  Licensed states: MI
+  Insurance: Aetna, Humana, Cash Pay
+  Email: noah.harris@amsconnects.example
+prov_089	Sophia Harris (LMFT) — Therapy
+  Styles: CBT-focused, Compassionate listening
+  Lived experience: Rural healthcare advocate, Immigrant background
+  Languages: English, German
+  Licensed states: MN
+  Insurance: Aetna, Cigna, Cash Pay
+  Email: sophia.harris@amsconnects.example
+prov_090	Liam Smith (LMFT) — Therapy
+  Styles: CBT-focused, Motivational interviewing
+  Lived experience: Immigrant background, Former teacher
+  Languages: English
+  Licensed states: MN
+  Insurance: Medicaid, BCBS, Cash Pay
+  Email: liam.smith@amsconnects.example
+prov_091	Harper Smith (PMHNP) — Psychiatry
+  Styles: Compassionate listening, CBT-focused
+  Lived experience: Experienced grief/loss, Immigrant background
+  Languages: English, German
+  Licensed states: MN
+  Insurance: United Healthcare, Medicaid, Cash Pay
+  Email: harper.smith@amsconnects.example
+prov_092	Logan Martin (PMHNP) — Psychiatry
+  Styles: Compassionate listening, Holistic
+  Lived experience: Experienced grief/loss, Veteran
+  Languages: English, German
+  Licensed states: MN
+  Insurance: Humana, Cigna, Cash Pay
+  Email: logan.martin@amsconnects.example
+prov_093	Harper Harris (LMFT) — Therapy
+  Styles: Direct, Goal-oriented, Strength-based
+  Lived experience: Former teacher, First-generation college student
+  Languages: English, Arabic
+  Licensed states: MS
+  Insurance: Humana, BCBS, Cash Pay
+  Email: harper.harris@amsconnects.example
+prov_094	Ethan Martin (LMFT) — Therapy
+  Styles: Direct, Goal-oriented, Trauma-informed
+  Lived experience: Parent, Experienced grief/loss
+  Languages: English
+  Licensed states: MS
+  Insurance: Cigna, Humana, Cash Pay
+  Email: ethan.martin@amsconnects.example
+prov_095	Amelia White (PMHNP) — Psychiatry
+  Styles: Mindfulness-based, Direct, Goal-oriented
+  Lived experience: Veteran, Former teacher
+  Languages: English, ASL
+  Licensed states: MS
+  Insurance: Aetna, Medicaid, Cash Pay
+  Email: amelia.white@amsconnects.example
+prov_096	Mason Jackson (PMHNP) — Psychiatry
+  Styles: Mindfulness-based, CBT-focused
+  Lived experience: First-generation college student, Former teacher
+  Languages: English
+  Licensed states: MS
+  Insurance: Aetna, United Healthcare, Cash Pay
+  Email: mason.jackson@amsconnects.example
+prov_097	Isabella Smith (LMFT) — Therapy
+  Styles: Holistic, Compassionate listening
+  Lived experience: Immigrant background, First-generation college student
+  Languages: English, ASL
+  Licensed states: MO
+  Insurance: Medicaid, Cigna, Cash Pay
+  Email: isabella.smith@amsconnects.example
+prov_098	Mason Smith (LMFT) — Therapy
+  Styles: Mindfulness-based, Strength-based
+  Lived experience: Rural healthcare advocate, Former teacher
+  Languages: English, Portuguese
+  Licensed states: MO
+  Insurance: Cigna, Humana, Cash Pay
+  Email: mason.smith@amsconnects.example
+prov_099	Amelia Smith (PMHNP) — Psychiatry
+  Styles: Strength-based, Trauma-informed
+  Lived experience: Former teacher, Rural healthcare advocate
+  Languages: English, Arabic
+  Licensed states: MO
+  Insurance: Aetna, Cigna, Cash Pay
+  Email: amelia.smith@amsconnects.example
+prov_100	Liam Martin (PMHNP) — Psychiatry
+  Styles: Holistic, CBT-focused
+  Lived experience: LGBTQ+ affirming, First-generation college student
+  Languages: English, Portuguese
+  Licensed states: MO
+  Insurance: Cigna, Medicaid, Cash Pay
+  Email: liam.martin@amsconnects.example
+prov_101	Harper White (LMFT) — Therapy
+  Styles: CBT-focused, Trauma-informed
+  Lived experience: Parent, Rural healthcare advocate
+  Languages: English, German
+  Licensed states: MT
+  Insurance: Medicaid, United Healthcare, Cash Pay
+  Email: harper.white@amsconnects.example
+prov_102	Elijah Martin (LMFT) — Therapy
+  Styles: Direct, Goal-oriented, Strength-based
+  Lived experience: Rural healthcare advocate, Experienced grief/loss
+  Languages: English
+  Licensed states: MT
+  Insurance: United Healthcare, Cigna, Cash Pay
+  Email: elijah.martin@amsconnects.example
+prov_103	Harper White (PMHNP) — Psychiatry
+  Styles: Motivational interviewing, Mindfulness-based
+  Lived experience: LGBTQ+ affirming, Veteran
+  Languages: English, Hindi
+  Licensed states: MT
+  Insurance: Cigna, Aetna, Cash Pay
+  Email: harper.white@amsconnects.example
+prov_104	Elijah Taylor (PMHNP) — Psychiatry
+  Styles: Trauma-informed, Direct, Goal-oriented
+  Lived experience: Rural healthcare advocate, First-generation college student
+  Languages: English
+  Licensed states: MT
+  Insurance: Medicaid, BCBS, Cash Pay
+  Email: elijah.taylor@amsconnects.example
+prov_105	Emily Jackson (LMFT) — Therapy
+  Styles: Holistic, Strength-based
+  Lived experience: Rural healthcare advocate, First-generation college student
+  Languages: English, Mandarin
+  Licensed states: NE
+  Insurance: United Healthcare, Aetna, Cash Pay
+  Email: emily.jackson@amsconnects.example
+prov_106	Mason Jackson (LMFT) — Therapy
+  Styles: CBT-focused, Mindfulness-based
+  Lived experience: Parent, LGBTQ+ affirming
+  Languages: English, Hindi
+  Licensed states: NE
+  Insurance: Cigna, Humana, Cash Pay
+  Email: mason.jackson@amsconnects.example
+prov_107	Olivia Brown (PMHNP) — Psychiatry
+  Styles: Mindfulness-based, Motivational interviewing
+  Lived experience: First-generation college student, Former teacher
+  Languages: English, Mandarin
+  Licensed states: NE
+  Insurance: Medicaid, Cigna, Cash Pay
+  Email: olivia.brown@amsconnects.example
+prov_108	Liam Brown (PMHNP) — Psychiatry
+  Styles: Direct, Goal-oriented, CBT-focused
+  Lived experience: Immigrant background, First-generation college student
+  Languages: English, French
+  Licensed states: NE
+  Insurance: BCBS, Medicaid, Cash Pay
+  Email: liam.brown@amsconnects.example
+prov_109	Ava Thomas (LMFT) — Therapy
+  Styles: Strength-based, Holistic
+  Lived experience: Former teacher, LGBTQ+ affirming
+  Languages: English, Arabic
+  Licensed states: NV
+  Insurance: United Healthcare, Humana, Cash Pay
+  Email: ava.thomas@amsconnects.example
+prov_110	Ethan Jackson (LMFT) — Therapy
+  Styles: Mindfulness-based, CBT-focused
+  Lived experience: First-generation college student, Experienced grief/loss
+  Languages: English
+  Licensed states: NV
+  Insurance: Aetna, United Healthcare, Cash Pay
+  Email: ethan.jackson@amsconnects.example
+prov_111	Amelia Martin (PMHNP) — Psychiatry
+  Styles: Holistic, Mindfulness-based
+  Lived experience: Former teacher, LGBTQ+ affirming
+  Languages: English, Spanish
+  Licensed states: NV
+  Insurance: Humana, United Healthcare, Cash Pay
+  Email: amelia.martin@amsconnects.example
+prov_112	Noah Jackson (PMHNP) — Psychiatry
+  Styles: Holistic, Direct, Goal-oriented
+  Lived experience: Experienced grief/loss, First-generation college student
+  Languages: English, Spanish
+  Licensed states: NV
+  Insurance: BCBS, Humana, Cash Pay
+  Email: noah.jackson@amsconnects.example
+prov_113	Mia Harris (LMFT) — Therapy
+  Styles: Strength-based, Compassionate listening
+  Lived experience: Veteran, First-generation college student
+  Languages: English
+  Licensed states: NH
+  Insurance: Cigna, Medicaid, Cash Pay
+  Email: mia.harris@amsconnects.example
+prov_114	Elijah White (LMFT) — Therapy
+  Styles: Compassionate listening, Mindfulness-based
+  Lived experience: Immigrant background, Experienced grief/loss
+  Languages: English
+  Licensed states: NH
+  Insurance: Medicaid, BCBS, Cash Pay
+  Email: elijah.white@amsconnects.example
+prov_115	Olivia Thomas (PMHNP) — Psychiatry
+  Styles: Trauma-informed, Compassionate listening
+  Lived experience: Immigrant background, Experienced grief/loss
+  Languages: English, ASL
+  Licensed states: NH
+  Insurance: Humana, Aetna, Cash Pay
+  Email: olivia.thomas@amsconnects.example
+prov_116	Lucas Smith (PMHNP) — Psychiatry
+  Styles: Motivational interviewing, Holistic
+  Lived experience: Parent, Veteran
+  Languages: English, Hindi
+  Licensed states: NH
+  Insurance: BCBS, Cigna, Cash Pay
+  Email: lucas.smith@amsconnects.example
+prov_117	Ava Taylor (LMFT) — Therapy
+  Styles: Holistic, Mindfulness-based
+  Lived experience: Immigrant background, Parent
+  Languages: English, Hindi
+  Licensed states: NJ
+  Insurance: United Healthcare, Humana, Cash Pay
+  Email: ava.taylor@amsconnects.example
+prov_118	James Brown (LMFT) — Therapy
+  Styles: Strength-based, Compassionate listening
+  Lived experience: Veteran, Experienced grief/loss
+  Languages: English
+  Licensed states: NJ
+  Insurance: BCBS, Aetna, Cash Pay
+  Email: james.brown@amsconnects.example
+prov_119	Sophia Martin (PMHNP) — Psychiatry
+  Styles: Direct, Goal-oriented, CBT-focused
+  Lived experience: Rural healthcare advocate, Experienced grief/loss
+  Languages: English, German
+  Licensed states: NJ
+  Insurance: Aetna, Cigna, Cash Pay
+  Email: sophia.martin@amsconnects.example
+prov_120	Aiden Taylor (PMHNP) — Psychiatry
+  Styles: Mindfulness-based, Trauma-informed
+  Lived experience: LGBTQ+ affirming, Former teacher
+  Languages: English, Arabic
+  Licensed states: NJ
+  Insurance: BCBS, Humana, Cash Pay
+  Email: aiden.taylor@amsconnects.example
+prov_121	Mia Martin (LMFT) — Therapy
+  Styles: Motivational interviewing, Direct, Goal-oriented
+  Lived experience: Immigrant background, Experienced grief/loss
+  Languages: English
+  Licensed states: NM
+  Insurance: Humana, BCBS, Cash Pay
+  Email: mia.martin@amsconnects.example
+prov_122	Logan Brown (LMFT) — Therapy
+  Styles: Strength-based, Holistic
+  Lived experience: LGBTQ+ affirming, Immigrant background
+  Languages: English
+  Licensed states: NM
+  Insurance: Cigna, Aetna, Cash Pay
+  Email: logan.brown@amsconnects.example
+prov_123	Ava Brown (PMHNP) — Psychiatry
+  Styles: Strength-based, Holistic
+  Lived experience: Immigrant background, LGBTQ+ affirming
+  Languages: English
+  Licensed states: NM
+  Insurance: Aetna, BCBS, Cash Pay
+  Email: ava.brown@amsconnects.example
+prov_124	Liam Taylor (PMHNP) — Psychiatry
+  Styles: Direct, Goal-oriented, Trauma-informed
+  Lived experience: Immigrant background, Rural healthcare advocate
+  Languages: English
+  Licensed states: NM
+  Insurance: Humana, BCBS, Cash Pay
+  Email: liam.taylor@amsconnects.example
+prov_125	Charlotte Jackson (LMFT) — Therapy
+  Styles: Mindfulness-based, CBT-focused
+  Lived experience: Experienced grief/loss, Veteran
+  Languages: English, ASL
+  Licensed states: NY
+  Insurance: Humana, Cigna, Cash Pay
+  Email: charlotte.jackson@amsconnects.example
+prov_126	Lucas Harris (LMFT) — Therapy
+  Styles: Compassionate listening, Strength-based
+  Lived experience: Veteran, Former teacher
+  Languages: English, French
+  Licensed states: NY
+  Insurance: Cigna, United Healthcare, Cash Pay
+  Email: lucas.harris@amsconnects.example
+prov_127	Ava Taylor (PMHNP) — Psychiatry
+  Styles: CBT-focused, Direct, Goal-oriented
+  Lived experience: Immigrant background, Former teacher
+  Languages: English
+  Licensed states: NY
+  Insurance: BCBS, Cigna, Cash Pay
+  Email: ava.taylor@amsconnects.example
+prov_128	Lucas Thomas (PMHNP) — Psychiatry
+  Styles: Strength-based, Trauma-informed
+  Lived experience: Immigrant background, Former teacher
+  Languages: English, Spanish
+  Licensed states: NY
+  Insurance: Medicaid, Cigna, Cash Pay
+  Email: lucas.thomas@amsconnects.example
+prov_129	Ava Smith (LMFT) — Therapy
+  Styles: CBT-focused, Compassionate listening
+  Lived experience: Rural healthcare advocate, Immigrant background
+  Languages: English, Mandarin
+  Licensed states: NC
+  Insurance: Humana, United Healthcare, Cash Pay
+  Email: ava.smith@amsconnects.example
+prov_130	Noah Harris (LMFT) — Therapy
+  Styles: Compassionate listening, Motivational interviewing
+  Lived experience: Parent, First-generation college student
+  Languages: English
+  Licensed states: NC
+  Insurance: Medicaid, United Healthcare, Cash Pay
+  Email: noah.harris@amsconnects.example
+prov_131	Emma Taylor (PMHNP) — Psychiatry
+  Styles: Motivational interviewing, Direct, Goal-oriented
+  Lived experience: LGBTQ+ affirming, First-generation college student
+  Languages: English, Mandarin
+  Licensed states: NC
+  Insurance: Medicaid, Cigna, Cash Pay
+  Email: emma.taylor@amsconnects.example
+prov_132	Ethan White (PMHNP) — Psychiatry
+  Styles: Compassionate listening, CBT-focused
+  Lived experience: Parent, LGBTQ+ affirming
+  Languages: English
+  Licensed states: NC
+  Insurance: United Healthcare, Humana, Cash Pay
+  Email: ethan.white@amsconnects.example
+prov_133	Harper Martin (LMFT) — Therapy
+  Styles: Holistic, Direct, Goal-oriented
+  Lived experience: Experienced grief/loss, Immigrant background
+  Languages: English
+  Licensed states: ND
+  Insurance: United Healthcare, Cigna, Cash Pay
+  Email: harper.martin@amsconnects.example
+prov_134	Daniel Johnson (LMFT) — Therapy
+  Styles: Holistic, Direct, Goal-oriented
+  Lived experience: Rural healthcare advocate, Immigrant background
+  Languages: English
+  Licensed states: ND
+  Insurance: Aetna, Medicaid, Cash Pay
+  Email: daniel.johnson@amsconnects.example
+prov_135	Harper Smith (PMHNP) — Psychiatry
+  Styles: Holistic, Motivational interviewing
+  Lived experience: Experienced grief/loss, Rural healthcare advocate
+  Languages: English, French
+  Licensed states: ND
+  Insurance: Cigna, BCBS, Cash Pay
+  Email: harper.smith@amsconnects.example
+prov_136	Logan Anderson (PMHNP) — Psychiatry
+  Styles: Motivational interviewing, CBT-focused
+  Lived experience: Immigrant background, Former teacher
+  Languages: English, Spanish
+  Licensed states: ND
+  Insurance: Humana, Aetna, Cash Pay
+  Email: logan.anderson@amsconnects.example
+prov_137	Isabella Anderson (LMFT) — Therapy
+  Styles: Holistic, Compassionate listening
+  Lived experience: Immigrant background, Parent
+  Languages: English
+  Licensed states: OH
+  Insurance: Cigna, BCBS, Cash Pay
+  Email: isabella.anderson@amsconnects.example
+prov_138	Mason Taylor (LMFT) — Therapy
+  Styles: Compassionate listening, CBT-focused
+  Lived experience: Experienced grief/loss, Veteran
+  Languages: English, French
+  Licensed states: OH
+  Insurance: BCBS, Cigna, Cash Pay
+  Email: mason.taylor@amsconnects.example
+prov_139	Mia Anderson (PMHNP) — Psychiatry
+  Styles: Holistic, Mindfulness-based
+  Lived experience: Parent, Rural healthcare advocate
+  Languages: English
+  Licensed states: OH
+  Insurance: BCBS, Cigna, Cash Pay
+  Email: mia.anderson@amsconnects.example
+prov_140	Ethan Anderson (PMHNP) — Psychiatry
+  Styles: Mindfulness-based, Trauma-informed
+  Lived experience: Immigrant background, Rural healthcare advocate
+  Languages: English
+  Licensed states: OH
+  Insurance: Medicaid, Aetna, Cash Pay
+  Email: ethan.anderson@amsconnects.example
+prov_141	Harper White (LMFT) — Therapy
+  Styles: Holistic, CBT-focused
+  Lived experience: Immigrant background, Experienced grief/loss
+  Languages: English, German
+  Licensed states: OK
+  Insurance: United Healthcare, Aetna, Cash Pay
+  Email: harper.white@amsconnects.example
+prov_142	Ethan Jackson (LMFT) — Therapy
+  Styles: Mindfulness-based, Holistic
+  Lived experience: Immigrant background, Parent
+  Languages: English
+  Licensed states: OK
+  Insurance: Aetna, Medicaid, Cash Pay
+  Email: ethan.jackson@amsconnects.example
+prov_143	Emily Taylor (PMHNP) — Psychiatry
+  Styles: Strength-based, Compassionate listening
+  Lived experience: Experienced grief/loss, Rural healthcare advocate
+  Languages: English, Hindi
+  Licensed states: OK
+  Insurance: United Healthcare, Aetna, Cash Pay
+  Email: emily.taylor@amsconnects.example
+prov_144	Daniel Johnson (PMHNP) — Psychiatry
+  Styles: CBT-focused, Compassionate listening
+  Lived experience: Experienced grief/loss, LGBTQ+ affirming
+  Languages: English
+  Licensed states: OK
+  Insurance: Medicaid, United Healthcare, Cash Pay
+  Email: daniel.johnson@amsconnects.example
+prov_145	Olivia Brown (LMFT) — Therapy
+  Styles: CBT-focused, Motivational interviewing
+  Lived experience: First-generation college student, LGBTQ+ affirming
+  Languages: English, French
+  Licensed states: OR
+  Insurance: BCBS, Cigna, Cash Pay
+  Email: olivia.brown@amsconnects.example
+prov_146	Ethan Anderson (LMFT) — Therapy
+  Styles: Direct, Goal-oriented, Mindfulness-based
+  Lived experience: Rural healthcare advocate, Experienced grief/loss
+  Languages: English, Mandarin
+  Licensed states: OR
+  Insurance: Cigna, United Healthcare, Cash Pay
+  Email: ethan.anderson@amsconnects.example
+prov_147	Ava Anderson (PMHNP) — Psychiatry
+  Styles: CBT-focused, Mindfulness-based
+  Lived experience: Experienced grief/loss, Former teacher
+  Languages: English
+  Licensed states: OR
+  Insurance: Cigna, Aetna, Cash Pay
+  Email: ava.anderson@amsconnects.example
+prov_148	Mason Johnson (PMHNP) — Psychiatry
+  Styles: Strength-based, Holistic
+  Lived experience: Rural healthcare advocate, Immigrant background
+  Languages: English
+  Licensed states: OR
+  Insurance: United Healthcare, Medicaid, Cash Pay
+  Email: mason.johnson@amsconnects.example
+prov_149	Emma Taylor (LMFT) — Therapy
+  Styles: Strength-based, Trauma-informed
+  Lived experience: Veteran, LGBTQ+ affirming
+  Languages: English
+  Licensed states: PA
+  Insurance: Medicaid, United Healthcare, Cash Pay
+  Email: emma.taylor@amsconnects.example
+prov_150	Daniel Harris (LMFT) — Therapy
+  Styles: Mindfulness-based, Trauma-informed
+  Lived experience: LGBTQ+ affirming, Experienced grief/loss
+  Languages: English
+  Licensed states: PA
+  Insurance: Humana, Aetna, Cash Pay
+  Email: daniel.harris@amsconnects.example
+prov_151	Isabella Smith (PMHNP) — Psychiatry
+  Styles: Holistic, CBT-focused
+  Lived experience: Rural healthcare advocate, Parent
+  Languages: English, Arabic
+  Licensed states: PA
+  Insurance: Cigna, BCBS, Cash Pay
+  Email: isabella.smith@amsconnects.example
+prov_152	Liam Thomas (PMHNP) — Psychiatry
+  Styles: Direct, Goal-oriented, CBT-focused
+  Lived experience: Rural healthcare advocate, Experienced grief/loss
+  Languages: English, Arabic
+  Licensed states: PA
+  Insurance: Aetna, BCBS, Cash Pay
+  Email: liam.thomas@amsconnects.example
+prov_153	Isabella Thomas (LMFT) — Therapy
+  Styles: CBT-focused, Direct, Goal-oriented
+  Lived experience: Immigrant background, Parent
+  Languages: English
+  Licensed states: RI
+  Insurance: Cigna, United Healthcare, Cash Pay
+  Email: isabella.thomas@amsconnects.example
+prov_154	James Harris (LMFT) — Therapy
+  Styles: Compassionate listening, Holistic
+  Lived experience: Rural healthcare advocate, First-generation college student
+  Languages: English
+  Licensed states: RI
+  Insurance: Medicaid, Aetna, Cash Pay
+  Email: james.harris@amsconnects.example
+prov_155	Ava Martin (PMHNP) — Psychiatry
+  Styles: CBT-focused, Mindfulness-based
+  Lived experience: Immigrant background, Parent
+  Languages: English, Hindi
+  Licensed states: RI
+  Insurance: BCBS, United Healthcare, Cash Pay
+  Email: ava.martin@amsconnects.example
+prov_156	James White (PMHNP) — Psychiatry
+  Styles: Mindfulness-based, CBT-focused
+  Lived experience: LGBTQ+ affirming, Former teacher
+  Languages: English, German
+  Licensed states: RI
+  Insurance: BCBS, Aetna, Cash Pay
+  Email: james.white@amsconnects.example
+prov_157	Isabella Anderson (LMFT) — Therapy
+  Styles: CBT-focused, Trauma-informed
+  Lived experience: First-generation college student, Immigrant background
+  Languages: English, French
+  Licensed states: SC
+  Insurance: Aetna, United Healthcare, Cash Pay
+  Email: isabella.anderson@amsconnects.example
+prov_158	James Jackson (LMFT) — Therapy
+  Styles: Holistic, CBT-focused
+  Lived experience: Immigrant background, Parent
+  Languages: English
+  Licensed states: SC
+  Insurance: Aetna, Cigna, Cash Pay
+  Email: james.jackson@amsconnects.example
+prov_159	Ava Thomas (PMHNP) — Psychiatry
+  Styles: Strength-based, Holistic
+  Lived experience: First-generation college student, Immigrant background
+  Languages: English
+  Licensed states: SC
+  Insurance: BCBS, United Healthcare, Cash Pay
+  Email: ava.thomas@amsconnects.example
+prov_160	Logan Taylor (PMHNP) — Psychiatry
+  Styles: Trauma-informed, Motivational interviewing
+  Lived experience: LGBTQ+ affirming, Immigrant background
+  Languages: English, German
+  Licensed states: SC
+  Insurance: Cigna, BCBS, Cash Pay
+  Email: logan.taylor@amsconnects.example
+prov_161	Sophia Smith (LMFT) — Therapy
+  Styles: Strength-based, Compassionate listening
+  Lived experience: LGBTQ+ affirming, Immigrant background
+  Languages: English, Spanish
+  Licensed states: SD
+  Insurance: Cigna, Aetna, Cash Pay
+  Email: sophia.smith@amsconnects.example
+prov_162	Noah Smith (LMFT) — Therapy
+  Styles: Compassionate listening, Direct, Goal-oriented
+  Lived experience: LGBTQ+ affirming, Experienced grief/loss
+  Languages: English
+  Licensed states: SD
+  Insurance: United Healthcare, BCBS, Cash Pay
+  Email: noah.smith@amsconnects.example
+prov_163	Olivia Taylor (PMHNP) — Psychiatry
+  Styles: Strength-based, CBT-focused
+  Lived experience: Rural healthcare advocate, Experienced grief/loss
+  Languages: English
+  Licensed states: SD
+  Insurance: Humana, Medicaid, Cash Pay
+  Email: olivia.taylor@amsconnects.example
+prov_164	Elijah Anderson (PMHNP) — Psychiatry
+  Styles: Direct, Goal-oriented, Compassionate listening
+  Lived experience: Former teacher, Rural healthcare advocate
+  Languages: English
+  Licensed states: SD
+  Insurance: Aetna, Medicaid, Cash Pay
+  Email: elijah.anderson@amsconnects.example
+prov_165	Emma White (LMFT) — Therapy
+  Styles: Direct, Goal-oriented, Strength-based
+  Lived experience: LGBTQ+ affirming, Veteran
+  Languages: English, Arabic
+  Licensed states: TN
+  Insurance: Humana, BCBS, Cash Pay
+  Email: emma.white@amsconnects.example
+
+prov_166	Logan Brown (LMFT) — Therapy
+  Styles: Motivational interviewing, Holistic
+  Lived experience: Parent, Immigrant background
+  Languages: English, ASL
+  Licensed states: TN
+  Insurance: Medicaid, BCBS, Cash Pay
+  Email: logan.brown@amsconnects.example
+prov_167	Mia Brown (PMHNP) — Psychiatry
+  Styles: Trauma-informed, CBT-focused
+  Lived experience: LGBTQ+ affirming, Immigrant background
+  Languages: English, Spanish
+  Licensed states: TN
+  Insurance: Humana, Aetna, Cash Pay
+  Email: mia.brown@amsconnects.example
+prov_168	Logan Jackson (PMHNP) — Psychiatry
+  Styles: Strength-based, Direct, Goal-oriented
+  Lived experience: Experienced grief/loss, First-generation college student
+  Languages: English, German
+  Licensed states: TN
+  Insurance: Cigna, BCBS, Cash Pay
+  Email: logan.jackson@amsconnects.example
+prov_169	Mia Johnson (LMFT) — Therapy
+  Styles: CBT-focused, Motivational interviewing
+  Lived experience: First-generation college student, Immigrant background
+  Languages: English
+  Licensed states: TX
+  Insurance: BCBS, Cigna, Cash Pay
+  Email: mia.johnson@amsconnects.example
+prov_170	Logan Martin (LMFT) — Therapy
+  Styles: Motivational interviewing, Trauma-informed
+  Lived experience: LGBTQ+ affirming, Former teacher
+  Languages: English
+  Licensed states: TX
+  Insurance: BCBS, Medicaid, Cash Pay
+  Email: logan.martin@amsconnects.example
+prov_171	Mia Jackson (PMHNP) — Psychiatry
+  Styles: Trauma-informed, Holistic
+  Lived experience: Rural healthcare advocate, LGBTQ+ affirming
+  Languages: English
+  Licensed states: TX
+  Insurance: Medicaid, Cigna, Cash Pay
+  Email: mia.jackson@amsconnects.example
+prov_172	Aiden Martin (PMHNP) — Psychiatry
+  Styles: Holistic, Motivational interviewing
+  Lived experience: Experienced grief/loss, LGBTQ+ affirming
+  Languages: English, German
+  Licensed states: TX
+  Insurance: Aetna, Cigna, Cash Pay
+  Email: aiden.martin@amsconnects.example
+prov_173	Emma Harris (LMFT) — Therapy
+  Styles: Strength-based, Mindfulness-based
+  Lived experience: Former teacher, Experienced grief/loss
+  Languages: English
+  Licensed states: UT
+  Insurance: Humana, BCBS, Cash Pay
+  Email: emma.harris@amsconnects.example
+prov_174	Daniel Anderson (LMFT) — Therapy
+  Styles: Mindfulness-based, Trauma-informed
+  Lived experience: Rural healthcare advocate, Former teacher
+  Languages: English, Mandarin
+  Licensed states: UT
+  Insurance: BCBS, Medicaid, Cash Pay
+  Email: daniel.anderson@amsconnects.example
+prov_175	Emily Johnson (PMHNP) — Psychiatry
+  Styles: Strength-based, Compassionate listening
+  Lived experience: Veteran, First-generation college student
+  Languages: English
+  Licensed states: UT
+  Insurance: BCBS, Cigna, Cash Pay
+  Email: emily.johnson@amsconnects.example
+prov_176	James Jackson (PMHNP) — Psychiatry
+  Styles: Trauma-informed, Mindfulness-based
+  Lived experience: LGBTQ+ affirming, Former teacher
+  Languages: English
+  Licensed states: UT
+  Insurance: United Healthcare, Medicaid, Cash Pay
+  Email: james.jackson@amsconnects.example
+prov_177	Ava Harris (LMFT) — Therapy
+  Styles: Strength-based, Compassionate listening
+  Lived experience: LGBTQ+ affirming, Veteran
+  Languages: English
+  Licensed states: VT
+  Insurance: Humana, Aetna, Cash Pay
+  Email: ava.harris@amsconnects.example
+prov_178	James Johnson (LMFT) — Therapy
+  Styles: Trauma-informed, Motivational interviewing
+  Lived experience: Immigrant background, Rural healthcare advocate
+  Languages: English
+  Licensed states: VT
+  Insurance: Medicaid, Aetna, Cash Pay
+  Email: james.johnson@amsconnects.example
+prov_179	Mia Thomas (PMHNP) — Psychiatry
+  Styles: Direct, Goal-oriented, Motivational interviewing
+  Lived experience: Parent, Former teacher
+  Languages: English, Hindi
+  Licensed states: VT
+  Insurance: BCBS, Humana, Cash Pay
+  Email: mia.thomas@amsconnects.example
+prov_180	Lucas Taylor (PMHNP) — Psychiatry
+  Styles: Direct, Goal-oriented, Motivational interviewing
+  Lived experience: Veteran, Immigrant background
+  Languages: English, Mandarin
+  Licensed states: VT
+  Insurance: United Healthcare, BCBS, Cash Pay
+  Email: lucas.taylor@amsconnects.example
+prov_181	Sophia Jackson (LMFT) — Therapy
+  Styles: Direct, Goal-oriented, Mindfulness-based
+  Lived experience: LGBTQ+ affirming, Rural healthcare advocate
+  Languages: English, Spanish
+  Licensed states: VA
+  Insurance: Aetna, United Healthcare, Cash Pay
+  Email: sophia.jackson@amsconnects.example
+prov_182	Daniel Harris (LMFT) — Therapy
+  Styles: Motivational interviewing, Strength-based
+  Lived experience: LGBTQ+ affirming, Immigrant background
+  Languages: English
+  Licensed states: VA
+  Insurance: Humana, BCBS, Cash Pay
+  Email: daniel.harris@amsconnects.example
+prov_183	Emma Thomas (PMHNP) — Psychiatry
+  Styles: CBT-focused, Motivational interviewing
+  Lived experience: Experienced grief/loss, First-generation college student
+  Languages: English
+  Licensed states: VA
+  Insurance: Humana, Medicaid, Cash Pay
+  Email: emma.thomas@amsconnects.example
+prov_184	Liam White (PMHNP) — Psychiatry
+  Styles: Holistic, Trauma-informed
+  Lived experience: First-generation college student, Veteran
+  Languages: English, Portuguese
+  Licensed states: VA
+  Insurance: Cigna, Humana, Cash Pay
+  Email: liam.white@amsconnects.example
+prov_185	Sophia Harris (LMFT) — Therapy
+  Styles: Strength-based, Motivational interviewing
+  Lived experience: Experienced grief/loss, First-generation college student
+  Languages: English
+  Licensed states: WA
+  Insurance: Medicaid, Cigna, Cash Pay
+  Email: sophia.harris@amsconnects.example
+prov_186	James Taylor (LMFT) — Therapy
+  Styles: Direct, Goal-oriented, Motivational interviewing
+  Lived experience: Veteran, LGBTQ+ affirming
+  Languages: English
+  Licensed states: WA
+  Insurance: BCBS, Humana, Cash Pay
+  Email: james.taylor@amsconnects.example
+prov_187	Olivia Martin (PMHNP) — Psychiatry
+  Styles: Motivational interviewing, Strength-based
+  Lived experience: Experienced grief/loss, Rural healthcare advocate
+  Languages: English
+  Licensed states: WA
+  Insurance: United Healthcare, BCBS, Cash Pay
+  Email: olivia.martin@amsconnects.example
+prov_188	Ethan Brown (PMHNP) — Psychiatry
+  Styles: CBT-focused, Strength-based
+  Lived experience: First-generation college student, Experienced grief/loss
+  Languages: English, Hindi
+  Licensed states: WA
+  Insurance: United Healthcare, Medicaid, Cash Pay
+  Email: ethan.brown@amsconnects.example
+prov_189	Harper Anderson (LMFT) — Therapy
+  Styles: Trauma-informed, Direct, Goal-oriented
+  Lived experience: Experienced grief/loss, Former teacher
+  Languages: English
+  Licensed states: WV
+  Insurance: Cigna, Medicaid, Cash Pay
+  Email: harper.anderson@amsconnects.example
+prov_190	Mason Johnson (LMFT) — Therapy
+  Styles: Compassionate listening, Mindfulness-based
+  Lived experience: Immigrant background, Veteran
+  Languages: English
+  Licensed states: WV
+  Insurance: BCBS, Medicaid, Cash Pay
+  Email: mason.johnson@amsconnects.example
+prov_191	Mia Anderson (PMHNP) — Psychiatry
+  Styles: Compassionate listening, Mindfulness-based
+  Lived experience: Parent, LGBTQ+ affirming
+  Languages: English, Mandarin
+  Licensed states: WV
+  Insurance: BCBS, Medicaid, Cash Pay
+  Email: mia.anderson@amsconnects.example
+prov_192	Aiden Brown (PMHNP) — Psychiatry
+  Styles: Mindfulness-based, Trauma-informed
+  Lived experience: Parent, Immigrant background
+  Languages: English
+  Licensed states: WV
+  Insurance: Humana, United Healthcare, Cash Pay
+  Email: aiden.brown@amsconnects.example
+prov_193	Charlotte Jackson (LMFT) — Therapy
+  Styles: Strength-based, Holistic
+  Lived experience: Former teacher, Experienced grief/loss
+  Languages: English
+  Licensed states: WI
+  Insurance: Aetna, Medicaid, Cash Pay
+  Email: charlotte.jackson@amsconnects.example
+prov_194	Aiden Jackson (LMFT) — Therapy
+  Styles: Compassionate listening, Motivational interviewing
+  Lived experience: First-generation college student, Veteran
+  Languages: English
+  Licensed states: WI
+  Insurance: United Healthcare, Medicaid, Cash Pay
+  Email: aiden.jackson@amsconnects.example
+prov_195	Sophia Thomas (PMHNP) — Psychiatry
+  Styles: Trauma-informed, Strength-based
+  Lived experience: Rural healthcare advocate, Former teacher
+  Languages: English
+  Licensed states: WI
+  Insurance: Cigna, Humana, Cash Pay
+  Email: sophia.thomas@amsconnects.example
+prov_196	Liam Thomas (PMHNP) — Psychiatry
+  Styles: Holistic, Trauma-informed
+  Lived experience: Experienced grief/loss, Parent
+  Languages: English
+  Licensed states: WI
+  Insurance: Humana, BCBS, Cash Pay
+  Email: liam.thomas@amsconnects.example
+prov_197	Sophia Jackson (LMFT) — Therapy
+  Styles: Strength-based, Compassionate listening
+  Lived experience: Immigrant background, Veteran
+  Languages: English, French
   Licensed states: WY
-  Insurance: Aetna, Humana, Medicare, Cash Pay
-  Email: alexander.kim@amsconnects.example
+  Insurance: Medicaid, Humana, Cash Pay
+  Email: sophia.jackson@amsconnects.example
+prov_198	James Thomas (LMFT) — Therapy
+  Styles: Compassionate listening, Direct, Goal-oriented
+  Lived experience: Parent, Former teacher
+  Languages: English
+  Licensed states: WY
+  Insurance: Cigna, Humana, Cash Pay
+  Email: james.thomas@amsconnects.example
+prov_199	Emily Smith (PMHNP) — Psychiatry
+  Styles: Compassionate listening, Motivational interviewing
+  Lived experience: First-generation college student, Veteran
+  Languages: English
+  Licensed states: WY
+  Insurance: Medicaid, Aetna, Cash Pay
+  Email: emily.smith@amsconnects.example
+prov_200	Liam Jackson (PMHNP) — Psychiatry
+  Styles: Motivational interviewing, CBT-focused
+  Lived experience: Former teacher, Immigrant background
+  Languages: English
+  Licensed states: WY
+  Insurance: Humana, Aetna, Cash Pay
+  Email: liam.jackson@amsconnects.example
