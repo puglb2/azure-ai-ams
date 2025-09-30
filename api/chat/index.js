@@ -2,55 +2,49 @@
 const fs = require("fs");
 const path = require("path");
 
-// ---- Lightweight knobs ------------------------------------------------------
+// ------------------ Tunables ------------------
 const MAX_HISTORY_TURNS = 24;
 const DEFAULT_TEMP = 1;
-const DEFAULT_MAX_COMPLETION_TOKENS = 2048; // floor; client can request more
+const DEFAULT_MAX_COMPLETION_TOKENS = 2048;
 const MAX_PROVIDERS_LINES_DEBUG_PREVIEW = 5;
 
-// ---- Lazy-loaded instruction globals (cache once) ---------------------------
+// ------------------ Globals -------------------
 let SYS_PROMPT = "", FAQ_SNIPPET = "", POLICIES_SNIPPET = "";
 
-// ---- Data (reload each request) --------------------------------------------
+// Reloaded each request (so data edits are live)
 let PROVIDERS_TXT = "", PROVIDER_SCHEDULE_TXT = "";
-let PROVIDERS = []; // structured providers
-let SLOTS = [];     // structured slots
+let PROVIDERS = [];
+let SLOTS = [];
 
-// ----------------------------------------------------------------------------
-// Helpers
+// ------------------ Utils ---------------------
 function readIfExists(p){ try{ return fs.readFileSync(p, "utf8"); } catch { return ""; } }
-
-function normalizeText(s) {
+function normalizeText(s){
   return (s || "")
-    .replace(/^\uFEFF/, "")      // strip BOM
-    .replace(/\r\n/g, "\n")      // CRLF -> LF
-    .replace(/\u00A0/g, " ")     // NBSP -> space
+    .replace(/^\uFEFF/, "")    // BOM
+    .replace(/\r\n/g, "\n")    // CRLF->LF
+    .replace(/\u00A0/g, " ")   // NBSP
     .trim();
 }
 
-// ----------------------------------------------------------------------------
-// Init config
+// ------------------ Init ----------------------
 function initConfig(){
   const cfgDir  = path.join(__dirname, "../_config");
   const dataDir = path.join(__dirname, "../_data");
 
-  // Load instruction files ONCE (safe to cache)
-  if (!SYS_PROMPT) {
+  if (!SYS_PROMPT){
     const sys = readIfExists(path.join(cfgDir, "system_prompt.txt"));
     const faq = readIfExists(path.join(cfgDir, "faqs.txt"));
     const pol = readIfExists(path.join(cfgDir, "policies.txt"));
-
     SYS_PROMPT       = normalizeText(sys);
     FAQ_SNIPPET      = normalizeText(faq);
     POLICIES_SNIPPET = normalizeText(pol);
-
-    if (FAQ_SNIPPET) {
+    if (FAQ_SNIPPET){
       SYS_PROMPT += `
 
 # FAQ (summarize when relevant)
 ${FAQ_SNIPPET}`.trim();
     }
-    if (POLICIES_SNIPPET) {
+    if (POLICIES_SNIPPET){
       SYS_PROMPT += `
 
 # Policy notes (adhere to these)
@@ -58,10 +52,8 @@ ${POLICIES_SNIPPET}`.trim();
     }
   }
 
-  // Always reload data files so edits take effect without a restart
   const provFile = process.env.PROVIDERS_FILE || "providers_100.txt";
   const slotFile = process.env.SCHEDULE_FILE  || "provider_schedule_14d.txt";
-
   const provPath = path.join(dataDir, provFile);
   const slotPath = path.join(dataDir, slotFile);
 
@@ -72,13 +64,10 @@ ${POLICIES_SNIPPET}`.trim();
   SLOTS     = parseSchedule(PROVIDER_SCHEDULE_TXT);
 }
 
-// ----------------------------------------------------------------------------
-// Parsing (tolerant; no brittle keyword triggers)
-
+// ------------------ Parsing -------------------
 function parseProviders(raw){
-  if (!raw || !raw.trim()) return [];
-
-  // Split on *visually blank* lines (allow spaces/tabs)
+  if (!raw) return [];
+  // split on visually blank lines (allow spaces/tabs)
   const blocks = raw.split(/\r?\n[ \t]*\r?\n+/).map(b => b.trim()).filter(Boolean);
   const out = [];
 
@@ -90,26 +79,22 @@ function parseProviders(raw){
     if (!lines.length) continue;
 
     const header = lines[0];
-
-    // Accept hyphen, en-dash, or em-dash
-    // e.g. "prov_001  Name (PsyD) — Therapy"
+    // Accept -, – (en), — (em)
     const headerMatch =
-      header.match(/^(\S+)\s+(.+?)\s*[-–—]\s*(.+)$/) ||
-      header.match(/^(\S+)\s+(.+)$/);
-
+      header.match(/^(\S+)\s+(.+?)\s*[-–—]\s*(.+)$/) || // prov_001  Name — Role
+      header.match(/^(\S+)\s+(.+)$/);                  // prov_001  Name
     if (!headerMatch) continue;
 
     const id   = (headerMatch[1] || "").trim();
     const name = (headerMatch[2] || "").trim();
     let roleRaw = ((headerMatch[3] || "").trim().toLowerCase());
 
-    // Fallback: if no third capture, try splitting by any dash
-    if (!roleRaw) {
+    if (!roleRaw){
+      // last resort: split by dash type
       const parts = header.split(/[-–—]/);
       if (parts.length >= 2) roleRaw = (parts[parts.length - 1] || "").trim().toLowerCase();
     }
 
-    // Light role map (kept human, not strict)
     let role = "provider";
     if (roleRaw.includes("psychiat")) role = "psychiatrist";
     else if (roleRaw.includes("therap")) role = "therapist";
@@ -127,13 +112,12 @@ function parseProviders(raw){
       else if (lower.startsWith("insurance:"))        insurersLine = l.split(":").slice(1).join(":").trim();
       else if (lower.startsWith("email:"))            email = l.split(":").slice(1).join(":").trim();
       else {
-        // tolerate minor drift (e.g., missing colon alignment)
+        // tolerate minor drift
         if (!licensedStates && lower.includes("licensed states"))  licensedStates = l.split(":").slice(1).join(":").trim();
         if (!insurersLine   && lower.includes("insurance"))        insurersLine   = l.split(":").slice(1).join(":").trim();
       }
     }
 
-    // Keep raw values; do not normalize into controlled vocab (the model infers)
     const insurers = insurersLine
       ? insurersLine.split(/[,;]+/).map(s => s.trim()).filter(Boolean)
       : [];
@@ -154,13 +138,12 @@ function parseProviders(raw){
       email
     });
   }
-
   return out;
 }
 
 function parseSchedule(txt){
   // Expected: prov_039|2025-09-22|09:00
-  if (!txt || !txt.trim()) return [];
+  if (!txt) return [];
   const items = txt.trim().split(/\r?\n/).map(line => {
     const parts = line.split("|").map(p => p.trim());
     if (parts.length < 3) return null;
@@ -175,9 +158,9 @@ function parseSchedule(txt){
   return items;
 }
 
-// ----------------------------------------------------------------------------
-// Dataset context sent to the model (providers are visible; availability is index-only)
+// ------------------ Context Builder ----------
 function buildDatasetContext(){
+  // Providers (visible to model)
   const providerLines = PROVIDERS.map(p => {
     const parts = [
       p.id,
@@ -193,7 +176,7 @@ function buildDatasetContext(){
     return parts.join(" | ");
   });
 
-  // Availability index per provider (kept succinct)
+  // Availability (index only)
   const scheduleMap = new Map();
   for (const s of SLOTS){
     if (!scheduleMap.has(s.id)) scheduleMap.set(s.id, []);
@@ -214,11 +197,20 @@ ${providerLines.join("\n")}`.trim();
 # Format: provider_id: YYYY-MM-DD HH:MM, YYYY-MM-DD HH:MM, ...
 ${scheduleLines.join("\n")}`.trim() : "";
 
-  return `${visibleDirectory}\n\n${hiddenSchedule}`.trim();
+  // Strong nudge so the model actually uses the directory
+  const usagePolicy = `
+# Directory Use Policy (must follow)
+- You MUST pick providers ONLY from "Provider Directory" above.
+- If the user indicates "meds", "medication management", or "psychiatry", prefer role=psychiatrist (or "both").
+- Apply user constraints: state/license, cash pay vs insurance (match "Cash Pay" case-insensitively), language.
+- If matches exist, present 1–3 best options with id, name, role, licensed states, languages, pay/insurance, and email.
+- If no matches exist, say so plainly and offer to escalate to care coordination.
+- Do NOT invent providers or details not present in the directory.`.trim();
+
+  return `${visibleDirectory}\n\n${hiddenSchedule}\n\n${usagePolicy}`.trim();
 }
 
-// ----------------------------------------------------------------------------
-// Azure OpenAI call
+// ------------------ AOAI ---------------------
 async function callAOAI(url, messages, temperature, maxTokens, apiKey){
   const resp = await fetch(url, {
     method:"POST",
@@ -234,8 +226,7 @@ async function callAOAI(url, messages, temperature, maxTokens, apiKey){
   return { resp, data };
 }
 
-// ----------------------------------------------------------------------------
-// Main HTTP handler
+// ------------------ Handler ------------------
 module.exports = async function (context, req){
   try{
     initConfig();
@@ -246,7 +237,7 @@ module.exports = async function (context, req){
       return;
     }
 
-    // Keep recent turns only
+    // Recent history only
     const history = Array.isArray(req.body?.history) ? req.body.history : [];
     const normalizedHistory = history.slice(-MAX_HISTORY_TURNS).map(m => ({
       role: m?.role === "assistant" ? "assistant" : "user",
@@ -302,19 +293,23 @@ module.exports = async function (context, req){
       return;
     }
 
-    // Debug payload
+    // Debug view
     if (req.query?.debug === "1"){
-      // Quick structured previews and sanity counters
       const directoryPreview = PROVIDERS.slice(0, MAX_PROVIDERS_LINES_DEBUG_PREVIEW).map(p =>
         [p.id, p.name, p.role, (p.licensed_states||[]).join(","), (p.insurers||[]).join(","), (p.languages||[]).join(","), p.email].join(" | ")
       );
 
-      // Example sanity: AZ + psychiatrist + Cash Pay (case-insensitive contains)
-      const azCashPsych = PROVIDERS.filter(p =>
-        (p.role === "psychiatrist" || p.role === "both") &&
-        (p.licensed_states || []).includes("AZ") &&
-        (p.insurers_raw || p.insurers.join(",")).toLowerCase().includes("cash")
-      ).map(p => `${p.id} ${p.name}`);
+      // Heuristic sanity (no fast-path response; just info)
+      const last = userMessage.toLowerCase();
+      const stateMatch = (last.match(/\b([A-Z]{2})\b/g) || []).filter(s => /^[A-Z]{2}$/.test(s));
+      const wantsMeds = /\b(meds?|medication|psychiatr(y|ist|ic)|med\s*management)\b/i.test(userMessage);
+      const wantsCash = /cash\s*pay|cash-pay|cashpay|cash only/i.test(userMessage);
+      const filtered = PROVIDERS.filter(p => {
+        const stateOk = !stateMatch.length || (p.licensed_states||[]).some(s => stateMatch.includes(s));
+        const roleOk  = !wantsMeds || (p.role === "psychiatrist" || p.role === "both");
+        const cashOk  = !wantsCash || ( (p.insurers_raw || p.insurers.join(",")).toLowerCase().includes("cash") );
+        return stateOk && roleOk && cashOk;
+      }).map(p => `${p.id} ${p.name} (${p.role})`);
 
       context.res = {
         status:200,
@@ -333,10 +328,7 @@ module.exports = async function (context, req){
           provider_counts: { providers: PROVIDERS.length, slots: SLOTS.length },
           directory_preview: directoryPreview,
           history_len: normalizedHistory.length,
-          sanity_checks: {
-            az_cash_psychiatry_count: azCashPsych.length,
-            az_cash_psychiatry_list: azCashPsych
-          }
+          sanity_filters_for_last_message: filtered.slice(0, 10) // for quick eyeballing
         }
       };
       return;
