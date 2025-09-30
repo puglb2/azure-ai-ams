@@ -77,7 +77,14 @@ ${FAQ_SNIPPET}`.trim();
 # Policy notes (adhere to these)
 ${POLICIES_SNIPPET}`.trim();
   }
+  
+  // Append style/formatting guidance (formatting only; does not affect data calls)
+  SYS_PROMPT += `
 
+# Output & Tone Guide (format-only)
+${STYLE_GUIDE}
+`;
+  
   // Raw data
   PROVIDERS_TXT         = readIfExists(path.join(dataDir, "providers_100.txt"));
   PROVIDER_SCHEDULE_TXT = readIfExists(path.join(dataDir, "provider_schedule_14d.txt"));
