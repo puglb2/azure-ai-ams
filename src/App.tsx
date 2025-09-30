@@ -44,7 +44,7 @@ export default function App() {
 
     try {
       // only last 24 turns
-      const history = messages.slice(-24).map(m => ({ role: m.role, content: m.content }))
+      const history = messages.slice(-34).map(m => ({ role: m.role, content: m.content }))
 
       const res = await fetch('/api/chat?ui=1', {
         method: 'POST',
@@ -106,7 +106,7 @@ export default function App() {
               if (!busy) send() // ignore Enter while busy
             }
           }}
-          placeholder={busy ? 'Assistant is typing… (you can draft here)' : 'Type a message'}
+          placeholder={busy ? 'Assistant is typing…' : 'Type a message'}
           // keep enabled so you can draft while busy
           style={{flex:1, padding:10, borderRadius:6, border:'1px solid #ccc'}}
         />
