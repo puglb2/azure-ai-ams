@@ -3,7 +3,7 @@ const fs = require("fs");
 const path = require("path");
 
 // Tunables
-const MAX_HISTORY_TURNS = 24;
+const MAX_HISTORY_TURNS = 34;
 const DEFAULT_TEMP = 1;
 const DEFAULT_MAX_COMPLETION_TOKENS = 2048; // floor; client can request more
 const MAX_PROVIDERS_LINES_DEBUG_PREVIEW = 5; // only for ?debug=1 payload brevity
