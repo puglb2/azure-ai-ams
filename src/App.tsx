@@ -1,3 +1,4 @@
+// App.tsx
 import React, { useEffect, useRef, useState } from 'react'
 
 type Role = 'user' | 'assistant'
@@ -8,11 +9,23 @@ export default function App() {
   const [input, setInput] = useState('')
   const [busy, setBusy] = useState(false)
   const scrollerRef = useRef<HTMLDivElement | null>(null)
+  const inputRef = useRef<HTMLInputElement | null>(null)
 
+  // Always keep the input scrolled & focused appropriately
   useEffect(() => {
     const el = scrollerRef.current
     if (el) el.scrollTop = el.scrollHeight
   }, [messages, busy])
+
+  // Focus on mount
+  useEffect(() => {
+    inputRef.current?.focus()
+  }, [])
+
+  // Re-focus whenever we finish thinking
+  useEffect(() => {
+    if (!busy) inputRef.current?.focus()
+  }, [busy])
 
   // Kick off with a welcome message
   useEffect(() => {
@@ -25,7 +38,7 @@ export default function App() {
 
   async function send() {
     const text = input.trim()
-    if (!text || busy) return
+    if (!text || busy) return  // block sends while busy
     setInput('')
     setMessages(m => [...m, { role: 'user', content: text }])
     setBusy(true)
@@ -47,6 +60,8 @@ export default function App() {
       setMessages(m => [...m, { role: 'assistant', content: 'Sorry, something went wrong.' }])
     } finally {
       setBusy(false)
+      // keep the box active after the reply
+      requestAnimationFrame(() => inputRef.current?.focus())
     }
   }
 
@@ -70,17 +85,31 @@ export default function App() {
 
       <div style={{display:'flex', gap:8, marginTop:12}}>
         <input
+          ref={inputRef}
           value={input}
           onChange={e=>setInput(e.target.value)}
-          onKeyDown={e=>{if(e.key==='Enter') send()}}
-          placeholder={busy?'Working…':'Type a message'}
-          disabled={busy}
+          onKeyDown={e=>{
+            if(e.key==='Enter'){
+              e.preventDefault()
+              if (!busy) send() // ignore Enter while busy
+            }
+          }}
+          placeholder={busy ? 'Assistant is typing… (you can draft here)' : 'Type a message'}
+          // keep enabled so you can draft while busy
           style={{flex:1, padding:10, borderRadius:6, border:'1px solid #ccc'}}
         />
         <button
-          onClick={send}
-          disabled={busy}
-          style={{padding:'10px 16px', borderRadius:6, border:'1px solid #333', background:busy?'#555':'#111', color:'#fff'}}
+          onClick={()=>{ if(!busy) send() }}
+          disabled={busy || !input.trim()}
+          title={busy ? 'Please wait for the assistant to finish' : (input.trim() ? 'Send' : 'Type a message')}
+          style={{
+            padding:'10px 16px',
+            borderRadius:6,
+            border:'1px solid #333',
+            background:(busy || !input.trim()) ? '#555' : '#111',
+            color:'#fff',
+            cursor:(busy || !input.trim()) ? 'not-allowed' : 'pointer'
+          }}
         >
           Send
         </button>
