@@ -10,57 +10,69 @@ export default function App() {
   const [busy, setBusy] = useState(false)
   const scrollerRef = useRef<HTMLDivElement | null>(null)
   const inputRef = useRef<HTMLInputElement | null>(null)
+  const didInit = useRef(false)
 
-  // Always keep the input scrolled & focused appropriately
+  // keep scroll at bottom
   useEffect(() => {
     const el = scrollerRef.current
     if (el) el.scrollTop = el.scrollHeight
   }, [messages, busy])
 
-  // Focus on mount
+  // focus on mount + after each reply
   useEffect(() => {
     inputRef.current?.focus()
   }, [])
-
-  // Re-focus whenever we finish thinking
   useEffect(() => {
     if (!busy) inputRef.current?.focus()
   }, [busy])
 
-  // Kick off with a welcome message
+  // one-time welcome (guarded against React strict mode double calls)
   useEffect(() => {
-    if (messages.length === 0) {
-      setMessages([
-        { role: 'assistant', content: "Hi there! I’m the AMS Intake Assistant. Can you share a little bit about how you've been feeling?" }
-      ])
-    }
-  }, [messages])
+    if (didInit.current) return
+    didInit.current = true
+    setMessages([
+      { role: 'assistant', content: "Hi there! I’m the AMS Intake Assistant. Can you share a little bit about how you've been feeling?" }
+    ])
+  }, [])
 
   async function send() {
     const text = input.trim()
-    if (!text || busy) return  // block sends while busy
+    if (!text || busy) return
     setInput('')
     setMessages(m => [...m, { role: 'user', content: text }])
     setBusy(true)
 
     try {
+      // only last 24 turns
       const history = messages.slice(-24).map(m => ({ role: m.role, content: m.content }))
-      const res = await fetch('/api/chat?ui=1&debug=1', {
+
+      const res = await fetch('/api/chat?ui=1', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: text, history })
       })
+
+      // Non-200: show error body
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({} as any))
+        const msg = typeof err?.error === 'string'
+          ? `Sorry — ${err.error}`
+          : `Sorry — server error (${res.status})`
+        setMessages(m => [...m, { role: 'assistant', content: msg }])
+        return
+      }
+
       const data = await res.json().catch(() => ({} as any))
-      console.log('LLM debug:', data)
       const raw = typeof data?.reply === 'string' ? data.reply.trim() : ''
       const err = typeof data?.error === 'string' ? data.error.trim() : ''
-      const reply = raw || (err ? `Sorry — ${err}` : "")
+      const reply = raw || (err ? `Sorry — ${err}` : 'Sorry — empty reply.')
+
       setMessages(m => [...m, { role: 'assistant', content: reply }])
-    } catch {
-      setMessages(m => [...m, { role: 'assistant', content: 'Sorry, something went wrong.' }])
+    } catch (e: any) {
+      console.error('chat error', e)
+      setMessages(m => [...m, { role: 'assistant', content: 'Sorry — network error.' }])
     } finally {
       setBusy(false)
-      // keep the box active after the reply
       requestAnimationFrame(() => inputRef.current?.focus())
     }
   }
