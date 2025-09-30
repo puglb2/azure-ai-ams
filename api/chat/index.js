@@ -20,9 +20,10 @@ let SLOTS = [];
 function readIfExists(p){ try{ return fs.readFileSync(p, "utf8"); } catch { return ""; } }
 function normalizeText(s){
   return (s || "")
-    .replace(/^\uFEFF/, "")    // BOM
-    .replace(/\r\n/g, "\n")    // CRLF->LF
-    .replace(/\u00A0/g, " ")   // NBSP
+    .replace(/^\uFEFF/, "")        // strip BOM at start
+    .replace(/\r\n/g, "\n")        // CRLF -> LF
+    .replace(/[\u200B\u200C\u200D\u2060\uFEFF\u200E\u200F]/g, "") // strip zero-widths & LRM/RLM
+    .replace(/\u00A0/g, " ")       // NBSP -> space
     .trim();
 }
 
@@ -66,81 +67,95 @@ ${POLICIES_SNIPPET}`.trim();
 
 // ------------------ Parsing -------------------
 function parseProviders(raw){
-  if (!raw) return [];
-  // split on visually blank lines (allow spaces/tabs)
-  const blocks = raw.split(/\r?\n[ \t]*\r?\n+/).map(b => b.trim()).filter(Boolean);
   const out = [];
+  if (!raw) return out;
 
-  for (const block of blocks){
-    const lines = block
-      .split(/\r?\n/)
-      .map(l => normalizeText(l.replace(/\t/g, " ")))
-      .filter(Boolean);
-    if (!lines.length) continue;
+  const lines = normalizeText(raw).split("\n");
+  let cur = [];
 
-    const header = lines[0];
-    // Accept -, – (en), — (em)
-    const headerMatch =
-      header.match(/^(\S+)\s+(.+?)\s*[-–—]\s*(.+)$/) || // prov_001  Name — Role
-      header.match(/^(\S+)\s+(.+)$/);                  // prov_001  Name
-    if (!headerMatch) continue;
+  const isProvHeader = (line) => {
+    const clean = line.replace(/[\u200B\u200C\u200D\u2060\uFEFF\u200E\u200F]/g, "");
+    return /^\s*prov_\d{3,}\b/i.test(clean);
+  };
 
-    const id   = (headerMatch[1] || "").trim();
-    const name = (headerMatch[2] || "").trim();
-    let roleRaw = ((headerMatch[3] || "").trim().toLowerCase());
-
-    if (!roleRaw){
-      // last resort: split by dash type
-      const parts = header.split(/[-–—]/);
-      if (parts.length >= 2) roleRaw = (parts[parts.length - 1] || "").trim().toLowerCase();
-    }
-
-    let role = "provider";
-    if (roleRaw.includes("psychiat")) role = "psychiatrist";
-    else if (roleRaw.includes("therap")) role = "therapist";
-    else if (roleRaw.includes("both")) role = "both";
-
-    let styles = "", lived = "", languages = "", licensedStates = "", insurersLine = "", email = "";
-
-    for (let i=1;i<lines.length;i++){
-      const l = lines[i];
-      const lower = l.toLowerCase();
-      if (lower.startsWith("styles:"))                styles = l.split(":").slice(1).join(":").trim();
-      else if (lower.startsWith("lived experience:")) lived = l.split(":").slice(1).join(":").trim();
-      else if (lower.startsWith("languages:") || lower.startsWith("language:")) languages = l.split(":").slice(1).join(":").trim();
-      else if (lower.startsWith("licensed states:"))  licensedStates = l.split(":").slice(1).join(":").trim();
-      else if (lower.startsWith("insurance:"))        insurersLine = l.split(":").slice(1).join(":").trim();
-      else if (lower.startsWith("email:"))            email = l.split(":").slice(1).join(":").trim();
-      else {
-        // tolerate minor drift
-        if (!licensedStates && lower.includes("licensed states"))  licensedStates = l.split(":").slice(1).join(":").trim();
-        if (!insurersLine   && lower.includes("insurance"))        insurersLine   = l.split(":").slice(1).join(":").trim();
-      }
-    }
-
-    const insurers = insurersLine
-      ? insurersLine.split(/[,;]+/).map(s => s.trim()).filter(Boolean)
-      : [];
-    const states = licensedStates
-      ? licensedStates.split(/[,;]+/).map(s => s.trim()).filter(Boolean).map(s => s.length===2 ? s.toUpperCase() : s)
-      : [];
-    const langs = languages
-      ? languages.split(/[,;]+/).map(s => s.trim()).filter(Boolean)
-      : [];
-
-    out.push({
-      id, name, role, styles,
-      lived_experience: lived,
-      languages: langs,
-      licensed_states: states,
-      insurers_raw: insurersLine,
-      insurers,
-      email
-    });
+  function flush(){
+    if (!cur.length) return;
+    const block = cur.join("\n");
+    const rec = parseOneProvider(block);
+    if (rec) out.push(rec);
+    cur = [];
   }
+
+  for (const rawLine of lines){
+    const line = rawLine.replace(/[\u200B\u200C\u200D\u2060\uFEFF\u200E\u200F]/g, "").replace(/\t/g, " ");
+    if (isProvHeader(line)){
+      flush();
+      cur.push(line.trim());
+    } else {
+      // keep line (including blanks) inside current block
+      cur.push((line || "").trim());
+    }
+  }
+  flush();
   return out;
 }
 
+function parseOneProvider(block){
+  // clean again defensively
+  block = block.replace(/[\u200B\u200C\u200D\u2060\uFEFF\u200E\u200F]/g, "");
+  const lines = block.split("\n").map(l => l.replace(/\t/g," ").trim());
+
+  // first non-blank is header
+  const header = (lines.find(l => l.length) || "");
+  if (!header) return null;
+
+  // accept -, – or — between name and role
+  const hdr =
+    header.match(/^(\s*prov_\d{3,})\s+(.+?)\s*[-–—]\s*(.+)$/i) ||
+    header.match(/^(\s*prov_\d{3,})\s+(.+)$/i);
+  if (!hdr) return null;
+
+  const id   = hdr[1].trim();
+  const name = (hdr[2] || "").trim();
+  const roleRaw = ((hdr[3] || "").trim().toLowerCase());
+
+  let role = "provider";
+  if (roleRaw.includes("psychiat")) role = "psychiatrist";
+  else if (roleRaw.includes("therap")) role = "therapist";
+  else if (roleRaw.includes("both")) role = "both";
+
+  let styles = "", lived = "", languages = "", licensedStates = "", insurersLine = "", email = "";
+
+  for (let i = 1; i < lines.length; i++){
+    const l = lines[i] || "";
+    const lower = l.toLowerCase();
+    if (lower.startsWith("styles:"))                styles = l.split(":").slice(1).join(":").trim();
+    else if (lower.startsWith("lived experience:")) lived = l.split(":").slice(1).join(":").trim();
+    else if (lower.startsWith("languages:") || lower.startsWith("language:")) languages = l.split(":").slice(1).join(":").trim();
+    else if (lower.startsWith("licensed states:"))  licensedStates = l.split(":").slice(1).join(":").trim();
+    else if (lower.startsWith("insurance:"))        insurersLine = l.split(":").slice(1).join(":").trim();
+    else if (lower.startsWith("email:"))            email = l.split(":").slice(1).join(":").trim();
+    else {
+      // tolerate minor drift
+      if (!licensedStates && lower.includes("licensed states")) licensedStates = l.split(":").slice(1).join(":").trim();
+      if (!insurersLine && lower.includes("insurance"))         insurersLine   = l.split(":").slice(1).join(":").trim();
+    }
+  }
+
+  const insurers = insurersLine ? insurersLine.split(/[,;]+/).map(s => s.trim()).filter(Boolean) : [];
+  const states   = licensedStates ? licensedStates.split(/[,;]+/).map(s => s.trim()).filter(Boolean).map(s => s.length===2? s.toUpperCase() : s) : [];
+  const langs    = languages ? languages.split(/[,;]+/).map(s => s.trim()).filter(Boolean) : [];
+
+  return {
+    id, name, role, styles,
+    lived_experience: lived,
+    languages: langs,
+    licensed_states: states,
+    insurers_raw: insurersLine,
+    insurers,
+    email
+  };
+}
 function parseSchedule(txt){
   // Expected: prov_039|2025-09-22|09:00
   if (!txt) return [];
