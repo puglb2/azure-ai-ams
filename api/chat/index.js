@@ -81,59 +81,94 @@ function splitBlocksLoose(raw){
 
 function parseProviders(raw){
   if (!raw || !raw.trim()) return [];
-  const blocks = splitBlocksLoose(raw);
+
+  // Normalize newlines and invisibles
+  const lines = raw
+    .replace(/\r\n/g, "\n")
+    .replace(/\uFEFF/g, "")
+    .replace(/\t/g, " ")
+    .replace(/\u200B/g, "")
+    .split("\n");
+
+  const blocks = [];
+  let cur = [];
+
+  // Build blocks by header lines that start with prov_###
+  for (const lineRaw of lines){
+    const line = (lineRaw || "").trim();
+    if (!line) { 
+      // keep empty lines inside a block as soft separators
+      cur.push("");
+      continue;
+    }
+    if (/^prov_\d+\b/i.test(line)) {
+      // start of a new provider
+      if (cur.length) blocks.push(cur);
+      cur = [line];
+    } else {
+      cur.push(line);
+    }
+  }
+  if (cur.length) blocks.push(cur);
+
   const out = [];
 
-  for (const block of blocks){
-    const lines = block
-      .split(/\n/)
-      .map(l => l.replace(/\t/g," ").replace(/\u200B/g,"").trim())
-      .filter(Boolean);
-    if (!lines.length) continue;
+  for (const arr of blocks){
+    if (!arr.length) continue;
 
-    // normalize dash variants for header parsing
-    const header = lines[0].replace(/[–—−]/g, "-");
-    // ex: "prov_001  Allison Hill (PsyD) — Therapy"
-    const headerMatch = header.match(/^(\S+)\s+(.+?)\s*-\s*(.+)$/) || header.match(/^(\S+)\s+(.+)$/);
-    if (!headerMatch) continue;
+    // Header (normalize all dash variants to "-")
+    const header = arr[0].replace(/[–—−]/g, "-").trim();
+    // Match "prov_001  Name (Creds) - Role" OR "prov_001  Name (Creds)"
+    const m = header.match(/^(\S+)\s+(.+?)\s*-\s*(.+)$/) || header.match(/^(\S+)\s+(.+)$/);
+    if (!m) continue;
 
-    const id = norm(headerMatch[1]);
-    const name = norm(headerMatch[2]);
-    const roleRaw = norm(headerMatch[3] || "");
+    const id = (m[1] || "").trim();
+    const name = (m[2] || "").trim();
+    const roleRaw = (m[3] || "").trim().toLowerCase();
 
-    // role inference
     let role = "provider";
-    const rLow = roleRaw.toLowerCase();
-    if (rLow.includes("psychiat")) role = "psychiatrist";
-    else if (rLow.includes("therap")) role = "therapist";
-    else if (rLow.includes("both")) role = "both";
+    if (roleRaw.includes("psychiat")) role = "psychiatrist";
+    else if (roleRaw.includes("therap")) role = "therapist";
+    else if (roleRaw.includes("both")) role = "both";
 
     let styles = "", lived = "", languages = "", licensedStates = "", insurersLine = "", email = "";
 
-    for (let i=1;i<lines.length;i++){
-      const l = lines[i];
+    for (let i = 1; i < arr.length; i++){
+      const l = (arr[i] || "").trim();
+      if (!l) continue;
       const lower = l.toLowerCase();
-      const afterColon = l.split(":").slice(1).join(":").trim();
 
-      if (lower.startsWith("styles:"))                  styles = afterColon;
-      else if (lower.startsWith("lived experience:"))   lived = afterColon;
-      else if (lower.startsWith("languages:") || lower.startsWith("language:")) languages = afterColon;
-      else if (lower.startsWith("licensed states:"))    licensedStates = afterColon;
-      else if (lower.startsWith("insurance:"))          insurersLine = afterColon;
-      else if (lower.startsWith("email:"))              email = afterColon;
+      // Extract after first ":" if present; otherwise try forgiving fallbacks
+      const afterColon = l.includes(":") ? l.split(":").slice(1).join(":").trim() : "";
+
+      if (lower.startsWith("styles:"))                          styles = afterColon || styles;
+      else if (lower.startsWith("lived experience:"))           lived = afterColon || lived;
+      else if (lower.startsWith("languages:") || lower.startsWith("language:")) languages = afterColon || languages;
+      else if (lower.startsWith("licensed states:"))            licensedStates = afterColon || licensedStates;
+      else if (lower.startsWith("insurance:"))                  insurersLine = afterColon || insurersLine;
+      else if (lower.startsWith("email:"))                      email = afterColon || email;
       else {
-        // tolerate minor drift (e.g., "Insurance -" or extra spaces)
-        if (!insurersLine && lower.includes("insurance"))        insurersLine = afterColon || l.replace(/.*insurance[:\-]\s*/i,"").trim();
-        if (!licensedStates && lower.includes("licensed states")) licensedStates = afterColon || l.replace(/.*licensed states[:\-]\s*/i,"").trim();
+        // Tolerate drift like "Insurance - ..." or spacing differences
+        if (!insurersLine && /insurance/i.test(l)) {
+          insurersLine = afterColon || l.replace(/.*insurance\s*[:\-]\s*/i, "").trim();
+        }
+        if (!licensedStates && /licensed\s*states/i.test(l)) {
+          licensedStates = afterColon || l.replace(/.*licensed\s*states\s*[:\-]\s*/i, "").trim();
+        }
+        if (!languages && /languages?/i.test(l)) {
+          languages = afterColon || l.replace(/.*languages?\s*[:\-]\s*/i, "").trim();
+        }
       }
     }
 
     const insurers = insurersLine
       ? insurersLine.split(/[,;]+/).map(s => s.trim()).filter(Boolean)
       : [];
+
     const states = licensedStates
       ? licensedStates.split(/[,;]+/).map(s => s.trim()).filter(Boolean).map(s => s.length===2 ? s.toUpperCase() : s)
       : [];
+
     const langs = languages
       ? languages.split(/[,;]+/).map(s => s.trim()).filter(Boolean)
       : [];
