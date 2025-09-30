@@ -2,9 +2,7 @@
 const fs = require("fs");
 const path = require("path");
 
-// -------------------------------
 // Tunables
-// -------------------------------
 const MAX_HISTORY_TURNS = 24;
 const DEFAULT_TEMP = 1;
 const DEFAULT_MAX_COMPLETION_TOKENS = 2048; // floor; client can request more
@@ -18,17 +16,41 @@ const SCHEDULE_LINES_HARD_CAP = 600;             // absolute max schedule rows
 const HINT_WEIGHT_BONUS = 4;                     // score bonus for matches
 const SECONDARY_WEIGHT_BONUS = 2;                // softer match bonus
 
-// -------------------------------
 // Lazy-loaded globals
-// -------------------------------
 let SYS_PROMPT = "", FAQ_SNIPPET = "", POLICIES_SNIPPET = "";
 let PROVIDERS_TXT = "", PROVIDER_SCHEDULE_TXT = "";
 let PROVIDERS = []; // structured providers
 let SLOTS = [];     // structured slots
 
-// -------------------------------
+// --- Response Style (format-only) 
+const STYLE_GUIDE = `
+## Response style (use throughout)
+- Sound like a real person talking to a friend: plain words, short sentences, warm but not gushy.
+- Skip filler like "I understand how that feels" or "I’m so sorry." Prefer direct, steady, practical language.
+- Use contractions (I’m, you’re, we’ll). Keep paragraphs short (1–3 lines).
+- Ask one simple question at a time, unless two are tightly related.
+- Mirror the user’s words lightly without overdoing it.
+
+## Provider output format (one-line cards)
+When recommending providers, show up to 3 top matches (unless the user asks for more). Use this exact one-line template per provider:
+
+• {name} — {Role} ({statesCSV}) | Cash pay{optionalInsurers} | Lang: {langsCSV}{optionalSoonest}
+
+Field rules:
+- {Role}: "Therapy", "Psychiatry", or "Both"
+- {statesCSV}: use 2-letter codes already provided (don’t rename)
+- {optionalInsurers}: if there are other payers, append " + {firstTwoInsurers}" (e.g., " + BCBS/UHC")
+- {langsCSV}: include “English” first if present, then any others from the data as-is
+- {optionalSoonest}: if you see schedule entries, append " | Soonest: {weekday short} {HH:MM}" (use the earliest slot you see)
+
+Example:
+• Emily White — Psychiatry (AL) | Cash pay + BCBS/UHC | Lang: English,French | Soonest: Thu 1:00
+
+After the list, add a short nudge line like:
+"Want me to hold the earliest time or keep browsing?"
+`.trim();
+
 // Utils
-// -------------------------------
 function readIfExists(p){ try{ return fs.readFileSync(p, "utf8"); } catch { return ""; } }
 const norm = s => (s||"").toString().trim();
 
@@ -65,9 +87,8 @@ ${POLICIES_SNIPPET}`.trim();
   SLOTS     = parseSchedule(PROVIDER_SCHEDULE_TXT);
 }
 
-// -------------------------------
 // Robust Parsing (no keyword triggers)
-// -------------------------------
+
 function splitBlocksLoose(raw){
   // tolerate windows/mac/unix newlines and extra spaces/tabs
   // split on 1+ completely blank lines
@@ -210,9 +231,7 @@ function parseSchedule(txt){
   return items;
 }
 
-// -------------------------------
 // Hints extraction (semantic-ish, no rigid keywords)
-// -------------------------------
 function extractHintsFromHistory(history, latestUserMessage){
   const allText = (history.map(h => h.content).join(" ") + " " + (latestUserMessage||"")).toLowerCase();
 
@@ -259,9 +278,7 @@ function extractHintsFromHistory(history, latestUserMessage){
   return { state, wantsCash, plan, prefersPsych, prefersTherap, prefersBoth, wantsFemale, wantsMale, language };
 }
 
-// -------------------------------
 // Filtering & context building
-// -------------------------------
 function scoreProvider(p, hints){
   let score = 0;
 
@@ -371,9 +388,7 @@ function indexSlots(){
   }
 }
 
-// -------------------------------
 // Azure OpenAI call
-// -------------------------------
 async function callAOAI(url, messages, temperature, maxTokens, apiKey){
   const resp = await fetch(url, {
     method:"POST",
@@ -389,9 +404,7 @@ async function callAOAI(url, messages, temperature, maxTokens, apiKey){
   return { resp, data };
 }
 
-// -------------------------------
 // Main HTTP handler
-// -------------------------------
 module.exports = async function (context, req){
   try{
     initConfig();
@@ -423,9 +436,7 @@ module.exports = async function (context, req){
 
     const url = `${endpoint.replace(/\/+$/,"")}/openai/deployments/${deployment}/chat/completions?api-version=${apiVersion}`;
 
-    // ---------------------------
     // Build filtered dataset context
-    // ---------------------------
     const hints = extractHintsFromHistory(normalizedHistory, userMessage);
     const directoryContext = buildDatasetContextFiltered(hints);
 
