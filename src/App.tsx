@@ -46,7 +46,7 @@ export default function App() {
       // only last 34 turns
       const history = messages.slice(-34).map(m => ({ role: m.role, content: m.content }))
 
-      const res = await fetch('/api/chat?ui=1&dubeg=1', {
+      const res = await fetch('/api/chat?ui=1&debug=1', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: text, history })
