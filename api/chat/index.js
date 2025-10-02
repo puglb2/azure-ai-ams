@@ -9,9 +9,9 @@ const DEFAULT_MAX_COMPLETION_TOKENS = 2048; // floor; client can request more
 const MAX_PROVIDERS_LINES_DEBUG_PREVIEW = 5; // only for ?debug=1 payload brevity
 
 // Filtering / context sizing
-const PROVIDER_CONTEXT_CHAR_BUDGET = 12000;      // ~12k chars for providers
+const PROVIDER_CONTEXT_CHAR_BUDGET = 12000;      // ~12k chars for providers (rendered cards)
 const SCHEDULE_CONTEXT_CHAR_BUDGET = 6000;       // ~6k chars for schedule
-const PROVIDER_HARD_CAP = 300;                   // absolute max lines emitted
+const PROVIDER_HARD_CAP = 300;                   // absolute max providers emitted
 const SCHEDULE_LINES_HARD_CAP = 600;             // absolute max schedule rows
 const HINT_WEIGHT_BONUS = 4;                     // score bonus for matches
 const SECONDARY_WEIGHT_BONUS = 2;                // softer match bonus
@@ -22,7 +22,7 @@ let PROVIDERS_TXT = "", PROVIDER_SCHEDULE_TXT = "";
 let PROVIDERS = []; // structured providers
 let SLOTS = [];     // structured slots
 
-// --- Response Style (format-only) 
+// --- Response Style (format-only)
 const STYLE_GUIDE = `
 ## Response style
 - Talk like a steady, real person—not a survey or therapist form.
@@ -40,12 +40,11 @@ const STYLE_GUIDE = `
 - If the user engages with you on a personal level (e.g., “How’s your day going?”), respond naturally and briefly to keep the interaction warm and human (e.g., “It’s going good, thanks for asking! What's been on your mind lately?”). Keep it friendly, but smoothly steer the conversation back to the intake flow so you stay on track and on brand.
 
 ## Provider output format (detailed cards)
-
-When listing providers, use this exact layout.  
-- Use **blank lines** between fields.  
-- Indent every line after the first with **two spaces**.  
-- Do **not** use bullet points, numbered lists, or code blocks.  
-- Do **not** collapse lines into a single paragraph.  
+When listing providers, use this exact layout.
+- Use **blank lines** between fields.
+- Indent every line after the first with **two spaces**.
+- Do **not** use bullet points, numbered lists, or code blocks.
+- Do **not** collapse lines into a single paragraph.
 
 Example:
 
@@ -61,21 +60,16 @@ Name: Aiden Johnson
 
   Languages: English, Portuguese
 
-  Soonest Slot: Thursday (10-02-25) at 9:00 AM
+  Soonest Slots: Thu (10/02/25) at 9:00 AM; Thu (10/02/25) at 11:00 AM
 
 Field rules:
-- **Name:** Use provider’s full name as given.  
-- **Care Type:** “Therapy,” “Psychiatry,”
-- **Personal Experiences:** Use lived experience values from directory (comma separated); if empty, write “Not specified.”  
-- **State:** Use 2-letter abbreviations or full state names already present.  
-- **Payment Types:** Always list “Cash pay” first, followed by insurers separated by commas.  
-- **Languages:** English first, then any others.  
-- **Soonest Slot:** Convert first available slot to readable format (e.g., “Thursday (10-02-25) at 9:00 AM”).  
-- **Soonest Slots (optional):** If multiple times are available, the model may list up to ten upcoming times like:
-  \`Soonest Slots: Thu (10-02-25) 9:00 AM; Thu 11:00 AM; Fri 9:00 AM; ...\`
-
-After the list, add a short nudge line like:
-"Want me to hold the earliest time or keep browsing?"
+- **Name:** Use provider’s full name as given.
+- **Care Type:** “Therapy,” “Psychiatry” (or “Both” if applicable).
+- **Personal Experiences:** Use lived experience values from directory (comma separated); if empty, write “Not specified.”
+- **State:** Use 2-letter abbreviations or full state names already present.
+- **Payment Types:** Always list “Cash pay” first, followed by insurers separated by commas.
+- **Languages:** English first, then any others.
+- **Soonest Slots:** List up to the first **10** upcoming openings (read from the availability index).
 `.trim();
 
 // Utils
@@ -95,24 +89,21 @@ function initConfig(){
 
   if (FAQ_SNIPPET) {
     SYS_PROMPT += `
-
 # FAQ (summarize when relevant)
 ${FAQ_SNIPPET}`.trim();
   }
   if (POLICIES_SNIPPET) {
     SYS_PROMPT += `
-
 # Policy notes (adhere to these)
 ${POLICIES_SNIPPET}`.trim();
   }
-  
+
   // Append style/formatting guidance (formatting only; does not affect data calls)
   SYS_PROMPT += `
-
 # Output & Tone Guide (format-only)
 ${STYLE_GUIDE}
 `;
-  
+
   // Raw data
   PROVIDERS_TXT         = readIfExists(path.join(dataDir, "providers_100.txt"));
   PROVIDER_SCHEDULE_TXT = readIfExists(path.join(dataDir, "provider_schedule_14d.txt"));
@@ -124,21 +115,9 @@ ${STYLE_GUIDE}
 
 // Robust Parsing (no keyword triggers)
 
-function splitBlocksLoose(raw){
-  // tolerate windows/mac/unix newlines and extra spaces/tabs
-  // split on 1+ completely blank lines
-  return raw
-    .replace(/\r\n/g, "\n")
-    .replace(/\uFEFF/g, "")         // BOM if any
-    .split(/\n[ \t]*\n+/)
-    .map(b => b.trim())
-    .filter(Boolean);
-}
-
 function parseProviders(raw){
   if (!raw || !raw.trim()) return [];
 
-  // Normalize newlines and invisibles
   const lines = raw
     .replace(/\r\n/g, "\n")
     .replace(/\uFEFF/g, "")
@@ -149,16 +128,13 @@ function parseProviders(raw){
   const blocks = [];
   let cur = [];
 
-  // Build blocks by header lines that start with prov_###
   for (const lineRaw of lines){
     const line = (lineRaw || "").trim();
-    if (!line) { 
-      // keep empty lines inside a block as soft separators
+    if (!line) {
       cur.push("");
       continue;
     }
     if (/^prov_\d+\b/i.test(line)) {
-      // start of a new provider
       if (cur.length) blocks.push(cur);
       cur = [line];
     } else {
@@ -172,9 +148,9 @@ function parseProviders(raw){
   for (const arr of blocks){
     if (!arr.length) continue;
 
-    // Header (normalize all dash variants to "-")
+    // Normalize dashes to "-"
     const header = arr[0].replace(/[–—−]/g, "-").trim();
-    // Match "prov_001  Name (Creds) - Role" OR "prov_001  Name (Creds)"
+    // "prov_001  Name (Creds) - Role" OR "prov_001  Name (Creds)"
     const m = header.match(/^(\S+)\s+(.+?)\s*-\s*(.+)$/) || header.match(/^(\S+)\s+(.+)$/);
     if (!m) continue;
 
@@ -193,8 +169,6 @@ function parseProviders(raw){
       const l = (arr[i] || "").trim();
       if (!l) continue;
       const lower = l.toLowerCase();
-
-      // Extract after first ":" if present; otherwise try forgiving fallbacks
       const afterColon = l.includes(":") ? l.split(":").slice(1).join(":").trim() : "";
 
       if (lower.startsWith("styles:"))                          styles = afterColon || styles;
@@ -204,7 +178,6 @@ function parseProviders(raw){
       else if (lower.startsWith("insurance:"))                  insurersLine = afterColon || insurersLine;
       else if (lower.startsWith("email:"))                      email = afterColon || email;
       else {
-        // Tolerate drift like "Insurance - ..." or spacing differences
         if (!insurersLine && /insurance/i.test(l)) {
           insurersLine = afterColon || l.replace(/.*insurance\s*[:\-]\s*/i, "").trim();
         }
@@ -266,12 +239,21 @@ function parseSchedule(txt){
   return items;
 }
 
+// Build a quick index of slots by provider id for scoring/compaction
+let SLOTS_BY_ID = new Map();
+function indexSlots(){
+  SLOTS_BY_ID = new Map();
+  for (const s of SLOTS){
+    if (!SLOTS_BY_ID.has(s.id)) SLOTS_BY_ID.set(s.id, []);
+    SLOTS_BY_ID.get(s.id).push(`${s.date} ${s.time}`);
+  }
+}
+
 // Hints extraction (semantic-ish, no rigid keywords)
 function extractHintsFromHistory(history, latestUserMessage){
   const allText = (history.map(h => h.content).join(" ") + " " + (latestUserMessage||"")).toLowerCase();
 
-  // State (two-letter) heuristic
-  // prefers explicit " az " but also allows "arizona"
+  // State
   const STATE_ABBRS = ["al","ak","az","ar","ca","co","ct","de","fl","ga","hi","id","il","in","ia","ks","ky","la","me","md","ma","mi","mn","ms","mo","mt","ne","nv","nh","nj","nm","ny","nc","nd","oh","ok","or","pa","ri","sc","sd","tn","tx","ut","vt","va","wa","wv","wi","wy"];
   let state = "";
   for (const abbr of STATE_ABBRS){
@@ -313,69 +295,85 @@ function extractHintsFromHistory(history, latestUserMessage){
   return { state, wantsCash, plan, prefersPsych, prefersTherap, prefersBoth, wantsFemale, wantsMale, language };
 }
 
-// Filtering & context building
+// Scoring (unchanged)
 function scoreProvider(p, hints){
   let score = 0;
-
-  // State
   if (hints.state && p.licensed_states?.includes(hints.state)) score += HINT_WEIGHT_BONUS;
 
-  // Payment / insurance feel
   const insLow = (p.insurers_raw || p.insurers?.join(",") || "").toLowerCase();
   if (hints.wantsCash && insLow.includes("cash")) score += HINT_WEIGHT_BONUS;
   if (hints.plan && insLow.includes(hints.plan)) score += SECONDARY_WEIGHT_BONUS;
 
-  // Modality
   if (hints.prefersBoth && p.role === "both") score += HINT_WEIGHT_BONUS;
   if (hints.prefersPsych && p.role === "psychiatrist") score += HINT_WEIGHT_BONUS;
   if (hints.prefersTherap && p.role === "therapist") score += HINT_WEIGHT_BONUS;
 
-  // Language
   const langsLow = (p.languages||[]).map(x=>x.toLowerCase());
   if (hints.language && langsLow.includes(hints.language)) score += SECONDARY_WEIGHT_BONUS;
 
-  // Gentle preference nudge if name suggests gender (not reliable, so very soft)
-  if (hints.wantsFemale && /(\bmd\b|\bpmhnp\b|\bpsyd\b|\bphd\b|\blpc\b|\blmft\b|\blcsw\b)/i.test(p.name)) score += 0; // neutral
-  if (hints.wantsMale   && /(\bmd\b|\bpmhnp\b|\bpsyd\b|\bphd\b|\blpc\b|\blmft\b|\blcsw\b)/i.test(p.name)) score += 0; // neutral
-
-  // Availability boost if any slots exist
   if (SLOTS_BY_ID.has(p.id)) score += SECONDARY_WEIGHT_BONUS;
 
   return score;
 }
 
-// (CHANGE 1) — one-line provider directory row
-function providerLine(p){
-  const parts = [
-    p.id,
-    p.name,
-    p.role || "provider",
-    p.licensed_states?.length ? `states=${p.licensed_states.join(",")}` : null,
-    p.insurers?.length ? `insurers=${p.insurers.join(",")}` : (p.insurers_raw ? `insurers=${p.insurers_raw}` : null),
-    p.languages?.length ? `langs=${p.languages.join(",")}` : null,
-    p.styles ? `styles=${p.styles}` : null,
-    p.lived_experience ? `lived=${p.lived_experience}` : null,
-    p.email ? `email=${p.email}` : null
-  ].filter(Boolean);
-  return parts.join(" | ");
+// --- Multi-line provider cards (format-only)
+function providerCard(p) {
+  const lines = [];
+
+  // Name (no indent on first line)
+  lines.push(`Name: ${p.name}`);
+
+  // Care Type
+  const careType = p.role
+    ? p.role.charAt(0).toUpperCase() + p.role.slice(1)
+    : "Not specified";
+  lines.push(`  Type of Care: ${careType}`);
+
+  // Personal Experiences
+  const lived = p.lived_experience?.trim()
+    ? p.lived_experience
+    : "Not specified";
+  lines.push(`  Personal Experiences: ${lived}`);
+
+  // State(s)
+  const stateStr = p.licensed_states?.length
+    ? p.licensed_states.join(", ")
+    : "Not specified";
+  lines.push(`  State: ${stateStr}`);
+
+  // Payment Types: Cash pay first if present / default to Cash pay when unknown
+  let payment = "";
+  if (p.insurers_raw || (p.insurers && p.insurers.length)) {
+    const insurersList = p.insurers?.length ? p.insurers.join(", ") : p.insurers_raw;
+    payment = /cash/i.test(insurersList)
+      ? insurersList
+      : `Cash pay${insurersList ? ", " + insurersList : ""}`;
+  } else {
+    payment = "Cash pay";
+  }
+  lines.push(`  Payment Types: ${payment}`);
+
+  // Languages
+  const langsStr = p.languages?.length ? p.languages.join(", ") : "English";
+  lines.push(`  Languages: ${langsStr}`);
+
+  // We do NOT render the times here. The model will read them from the schedule index below
+  // and print up to 10 earliest as "Soonest Slots: ..." in its answer (per style guide).
+
+  return lines.join("\n\n");
 }
 
-// (CHANGE 2) — include only next 10 openings per included provider
-function scheduleIndexLinesFor(ids){
+function scheduleIndexLinesFor(providerIds){
   const lines = [];
   let usedChars = 0;
   let usedRows = 0;
 
-  for (const id of ids){
+  for (const id of providerIds){
     const arr = SLOTS_BY_ID.get(id);
     if (!arr || !arr.length) continue;
-
-    const top10 = arr.slice(0, 10).join(", ");
-    const line = `${id}: ${top10}`;
-
+    const line = `${id}: ${arr.join(", ")}`;
     const nextChars = usedChars + line.length + 1;
     if (nextChars > SCHEDULE_CONTEXT_CHAR_BUDGET || usedRows >= SCHEDULE_LINES_HARD_CAP) break;
-
     lines.push(line);
     usedChars = nextChars;
     usedRows++;
@@ -384,48 +382,41 @@ function scheduleIndexLinesFor(ids){
 }
 
 function buildDatasetContextFiltered(hints){
-  // Score & select
+  // Score & order
   const scored = PROVIDERS.map(p => ({ p, s: scoreProvider(p, hints) }));
   scored.sort((a,b) => b.s - a.s);
-
-  // If everything scored 0 (no hints), keep first N but still cap by chars
   const ordered = scored.map(x => x.p);
 
-  const lines = [];
+  // Assemble rendered cards within char budget
+  const cards = [];
+  const includedIds = [];
   let used = 0;
+
   for (const p of ordered){
-    const line = providerLine(p);
-    const next = used + line.length + 1;
-    if (next > PROVIDER_CONTEXT_CHAR_BUDGET || lines.length >= PROVIDER_HARD_CAP) break;
-    lines.push(line);
+    const card = providerCard(p);
+    const next = used + card.length + 2; // +2 for separators/newlines
+    if (next > PROVIDER_CONTEXT_CHAR_BUDGET || cards.length >= PROVIDER_HARD_CAP) break;
+    cards.push(card);
+    includedIds.push(p.id);
     used = next;
   }
 
-  // Build availability (only for providers we actually included)
-  const chosenIds = new Set(lines.map(l => l.split(" | ")[0]));
-  const schedLines = scheduleIndexLinesFor(chosenIds);
+  // Build availability index (for included providers only)
+  const schedLines = scheduleIndexLinesFor(includedIds);
 
   const visibleDirectory = `
 # Provider Directory (use ONLY entries here; do not invent)
-# Format per line: id | name | role | states=... | insurers=... | langs=... | styles=... | lived=... | email=...
-${lines.join("\n")}`.trim();
+# Each entry is a multi-line card block.
+${cards.join("\n\n")}
+`.trim();
 
   const hiddenSchedule = schedLines.length ? `
 # Availability Index (for your internal reasoning; DO NOT quote verbatim)
 # Format: provider_id: YYYY-MM-DD HH:MM, YYYY-MM-DD HH:MM, ...
-${schedLines.join("\n")}`.trim() : "";
+${schedLines.join("\n")}
+`.trim() : "";
 
   return `${visibleDirectory}\n\n${hiddenSchedule}`.trim();
-}
-
-// Build a quick index of slots by provider id for scoring/compaction
-let SLOTS_BY_ID = new Map();
-function indexSlots(){
-  SLOTS_BY_ID = new Map();
-  for (const s of SLOTS){
-    if (!SLOTS_BY_ID.has(s.id)) SLOTS_BY_ID.set(s.id, []);
-    SLOTS_BY_ID.get(s.id).push(`${s.date} ${s.time}`);
-  }
 }
 
 // Azure OpenAI call
@@ -456,7 +447,7 @@ module.exports = async function (context, req){
       return;
     }
 
-    // Keep only last N turns and trim content (UI already limits)
+    // Keep only last N turns and trim content
     const history = Array.isArray(req.body?.history) ? req.body.history : [];
     const normalizedHistory = history
       .slice(-MAX_HISTORY_TURNS)
@@ -519,15 +510,15 @@ module.exports = async function (context, req){
       const provPath = path.join(dataDir, "providers_100.txt");
       const slotPath = path.join(dataDir, "provider_schedule_14d.txt");
 
-      // tiny preview for sanity (first few provider lines as actually parsed)
+      // raw parse preview (unchanged)
       const directoryPreview = PROVIDERS.slice(0, MAX_PROVIDERS_LINES_DEBUG_PREVIEW).map(p =>
         [p.id, p.name, p.role, (p.licensed_states||[]).join(","), (p.insurers||[]).join(","), (p.languages||[]).join(","), p.email].join(" | ")
       );
 
-      // show some filtered sample too
+      // filtered preview: show the first lines (Name: ...) of the rendered cards
       const filteredFirstLines = directoryContext
         .split("\n")
-        .filter(l => l.startsWith("prov_"))
+        .filter(l => /^Name:\s*/.test(l))
         .slice(0, MAX_PROVIDERS_LINES_DEBUG_PREVIEW);
 
       context.res = {
@@ -546,6 +537,10 @@ module.exports = async function (context, req){
             provider_schedule_txt: !!PROVIDER_SCHEDULE_TXT
           },
           provider_counts: { providers: PROVIDERS.length, slots: SLOTS.length },
+          provider_paths: {
+            provPath, provExists: fs.existsSync(provPath),
+            slotPath, slotExists: fs.existsSync(slotPath)
+          },
           directory_preview: directoryPreview,
           filtered_preview: filteredFirstLines,
           history_len: normalizedHistory.length,
