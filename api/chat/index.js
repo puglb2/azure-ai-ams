@@ -22,7 +22,7 @@ let PROVIDERS_TXT = "", PROVIDER_SCHEDULE_TXT = "";
 let PROVIDERS = []; // structured providers
 let SLOTS = [];     // structured slots
 
-// --- Response Style (format-only) 
+// --- Response Style (format-only)
 const STYLE_GUIDE = `
 ## Response style
 - Talk like a steady, real person—not a survey or therapist form.
@@ -40,15 +40,13 @@ const STYLE_GUIDE = `
 - If the user engages with you on a personal level (e.g., “How’s your day going?”), respond naturally and briefly to keep the interaction warm and human (e.g., “It’s going good, thanks for asking! What's been on your mind lately?”). Keep it friendly, but smoothly steer the conversation back to the intake flow so you stay on track and on brand.
 
 ## Provider output format (detailed cards)
-
-When listing providers, use this exact layout.  
-- Use **blank lines** between fields.  
-- Indent every line after the first with **two spaces**.  
-- Do **not** use bullet points, numbered lists, or code blocks.  
-- Do **not** collapse lines into a single paragraph.  
+When listing providers, use this exact layout.
+- Use **blank lines** between fields.
+- Indent every line after the first with **two spaces**.
+- Do **not** use bullet points, numbered lists, or code blocks.
+- Do **not** collapse lines into a single paragraph.
 
 Example:
-
 Name: Aiden Johnson
 
   Type of Care: Therapy
@@ -64,22 +62,22 @@ Name: Aiden Johnson
   Soonest Slot: Thursday (10-02-25) at 9:00 AM
 
 Field rules:
-- **Name:** Use provider’s full name as given.  
+- **Name:** Use provider’s full name as given.
 - **Care Type:** “Therapy,” “Psychiatry,”
-- **Personal Experiences:** Use lived experience values from directory (comma separated); if empty, write “Not specified.”  
-- **State:** Use 2-letter abbreviations or full state names already present.  
-- **Payment Types:** Always list “Cash pay” first, followed by insurers separated by commas.  
-- **Languages:** English first, then any others.  
-- **Soonest Slot:** Convert first available slot to readable format (e.g., “Thursday (10-02-25) at 9:00 AM”).  
+- **Personal Experiences:** Use lived experience values from directory (comma separated); if empty, write “Not specified.”
+- **State:** Use 2-letter abbreviations or full state names already present.
+- **Payment Types:** Always list “Cash pay” first, followed by insurers separated by commas.
+- **Languages:** English first, then any others.
+- **Soonest Slot:** Convert first available slot to readable format (e.g., “Thursday (10-02-25) at 9:00 AM”).
 
 Example:
 """
-Name: Aiden Johnson  
-Mental Health Care Type: Therapy  
-Personal Experiences: Grief, Insomnia, Eating Disorder  
-State: Arizona  
-Payment Types: Cash pay, BCBS, UHC, Medicaid  
-Languages: English, Portuguese  
+Name: Aiden Johnson
+Mental Health Care Type: Therapy
+Personal Experiences: Grief, Insomnia, Eating Disorder
+State: Arizona
+Payment Types: Cash pay, BCBS, UHC, Medicaid
+Languages: English, Portuguese
 Soonest Slot: Thursday (10-02-25) at 9:00 AM
 """
 
@@ -104,24 +102,21 @@ function initConfig(){
 
   if (FAQ_SNIPPET) {
     SYS_PROMPT += `
-
 # FAQ (summarize when relevant)
 ${FAQ_SNIPPET}`.trim();
   }
   if (POLICIES_SNIPPET) {
     SYS_PROMPT += `
-
 # Policy notes (adhere to these)
 ${POLICIES_SNIPPET}`.trim();
   }
-  
+
   // Append style/formatting guidance (formatting only; does not affect data calls)
   SYS_PROMPT += `
-
 # Output & Tone Guide (format-only)
 ${STYLE_GUIDE}
 `;
-  
+
   // Raw data
   PROVIDERS_TXT         = readIfExists(path.join(dataDir, "providers_100.txt"));
   PROVIDER_SCHEDULE_TXT = readIfExists(path.join(dataDir, "provider_schedule_14d.txt"));
@@ -132,7 +127,6 @@ ${STYLE_GUIDE}
 }
 
 // Robust Parsing (no keyword triggers)
-
 function splitBlocksLoose(raw){
   // tolerate windows/mac/unix newlines and extra spaces/tabs
   // split on 1+ completely blank lines
@@ -161,7 +155,7 @@ function parseProviders(raw){
   // Build blocks by header lines that start with prov_###
   for (const lineRaw of lines){
     const line = (lineRaw || "").trim();
-    if (!line) { 
+    if (!line) {
       // keep empty lines inside a block as soft separators
       cur.push("");
       continue;
