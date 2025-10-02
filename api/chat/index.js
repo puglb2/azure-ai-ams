@@ -42,15 +42,13 @@ const STYLE_GUIDE = `
 ## Provider output format (detailed cards)
 When listing provider matches, use this exact multi-line block per provider:
 
-```
-Name: {name}  
-Mental Health Care Type: {Role}  
-Personal Experiences: {lived_experience_list or “Not specified”}  
-State: {statesCSV}  
-Payment Types: {Cash pay + insurers}  
-Languages: {languagesCSV}  
-Soonest Slot: {Weekday (MM-DD-YY)} at {HH:MM AM/PM}
-```
+Name: {name} (/n)
+Mental Health Care Type: {Role}  (/n)
+Personal Experiences: {lived_experience_list or “Not specified”}  (/n)
+State: {statesCSV}  (/n)
+Payment Types: {Cash pay + insurers}  (/n)
+Languages: {languagesCSV}  (/n)
+Soonest Slot: {Weekday (MM-DD-YY)} at {HH:MM AM/PM}  (/n)
 
 Field rules:
 - **Name:** Use provider’s full name as given.  
@@ -62,6 +60,7 @@ Field rules:
 - **Soonest Slot:** Convert first available slot to readable format (e.g., “Thursday (10-02-25) at 9:00 AM”).  
 
 Example:
+"""
 Name: Aiden Johnson  
 Mental Health Care Type: Therapy  
 Personal Experiences: Grief, Insomnia, Eating Disorder  
@@ -69,6 +68,7 @@ State: Arizona
 Payment Types: Cash pay, BCBS, UHC, Medicaid  
 Languages: English, Portuguese  
 Soonest Slot: Thursday (10-02-25) at 9:00 AM
+"""
 
 After the list, add a short nudge line like:
 "Want me to hold the earliest time or keep browsing?"
