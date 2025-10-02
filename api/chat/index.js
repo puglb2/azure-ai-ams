@@ -22,7 +22,7 @@ let PROVIDERS_TXT = "", PROVIDER_SCHEDULE_TXT = "";
 let PROVIDERS = []; // structured providers
 let SLOTS = [];     // structured slots
 
-// --- Response Style (format-only)
+// --- Response Style (format-only) 
 const STYLE_GUIDE = `
 ## Response style
 - Talk like a steady, real person—not a survey or therapist form.
@@ -40,13 +40,15 @@ const STYLE_GUIDE = `
 - If the user engages with you on a personal level (e.g., “How’s your day going?”), respond naturally and briefly to keep the interaction warm and human (e.g., “It’s going good, thanks for asking! What's been on your mind lately?”). Keep it friendly, but smoothly steer the conversation back to the intake flow so you stay on track and on brand.
 
 ## Provider output format (detailed cards)
-When listing providers, use this exact layout.
-- Use **blank lines** between fields.
-- Indent every line after the first with **two spaces**.
-- Do **not** use bullet points, numbered lists, or code blocks.
-- Do **not** collapse lines into a single paragraph.
+
+When listing providers, use this exact layout.  
+- Use **blank lines** between fields.  
+- Indent every line after the first with **two spaces**.  
+- Do **not** use bullet points, numbered lists, or code blocks.  
+- Do **not** collapse lines into a single paragraph.  
 
 Example:
+
 Name: Aiden Johnson
 
   Type of Care: Therapy
@@ -62,24 +64,15 @@ Name: Aiden Johnson
   Soonest Slot: Thursday (10-02-25) at 9:00 AM
 
 Field rules:
-- **Name:** Use provider’s full name as given.
+- **Name:** Use provider’s full name as given.  
 - **Care Type:** “Therapy,” “Psychiatry,”
-- **Personal Experiences:** Use lived experience values from directory (comma separated); if empty, write “Not specified.”
-- **State:** Use 2-letter abbreviations or full state names already present.
-- **Payment Types:** Always list “Cash pay” first, followed by insurers separated by commas.
-- **Languages:** English first, then any others.
-- **Soonest Slot:** Convert first available slot to readable format (e.g., “Thursday (10-02-25) at 9:00 AM”).
-
-Example:
-"""
-Name: Aiden Johnson
-Mental Health Care Type: Therapy
-Personal Experiences: Grief, Insomnia, Eating Disorder
-State: Arizona
-Payment Types: Cash pay, BCBS, UHC, Medicaid
-Languages: English, Portuguese
-Soonest Slot: Thursday (10-02-25) at 9:00 AM
-"""
+- **Personal Experiences:** Use lived experience values from directory (comma separated); if empty, write “Not specified.”  
+- **State:** Use 2-letter abbreviations or full state names already present.  
+- **Payment Types:** Always list “Cash pay” first, followed by insurers separated by commas.  
+- **Languages:** English first, then any others.  
+- **Soonest Slot:** Convert first available slot to readable format (e.g., “Thursday (10-02-25) at 9:00 AM”).  
+- **Soonest Slots (optional):** If multiple times are available, the model may list up to ten upcoming times like:
+  \`Soonest Slots: Thu (10-02-25) 9:00 AM; Thu 11:00 AM; Fri 9:00 AM; ...\`
 
 After the list, add a short nudge line like:
 "Want me to hold the earliest time or keep browsing?"
@@ -102,21 +95,24 @@ function initConfig(){
 
   if (FAQ_SNIPPET) {
     SYS_PROMPT += `
+
 # FAQ (summarize when relevant)
 ${FAQ_SNIPPET}`.trim();
   }
   if (POLICIES_SNIPPET) {
     SYS_PROMPT += `
+
 # Policy notes (adhere to these)
 ${POLICIES_SNIPPET}`.trim();
   }
-
+  
   // Append style/formatting guidance (formatting only; does not affect data calls)
   SYS_PROMPT += `
+
 # Output & Tone Guide (format-only)
 ${STYLE_GUIDE}
 `;
-
+  
   // Raw data
   PROVIDERS_TXT         = readIfExists(path.join(dataDir, "providers_100.txt"));
   PROVIDER_SCHEDULE_TXT = readIfExists(path.join(dataDir, "provider_schedule_14d.txt"));
@@ -127,6 +123,7 @@ ${STYLE_GUIDE}
 }
 
 // Robust Parsing (no keyword triggers)
+
 function splitBlocksLoose(raw){
   // tolerate windows/mac/unix newlines and extra spaces/tabs
   // split on 1+ completely blank lines
@@ -155,7 +152,7 @@ function parseProviders(raw){
   // Build blocks by header lines that start with prov_###
   for (const lineRaw of lines){
     const line = (lineRaw || "").trim();
-    if (!line) {
+    if (!line) { 
       // keep empty lines inside a block as soft separators
       cur.push("");
       continue;
@@ -347,32 +344,24 @@ function scoreProvider(p, hints){
   return score;
 }
 
-function providerLine(p) {
-  const nameLine = `Name: ${p.name}`;
-  const typeLine = `Type: ${p.role.charAt(0).toUpperCase() + p.role.slice(1)}`;
-  const statesLine = p.licensed_states?.length ? `States: ${p.licensed_states.join(", ")}` : null;
-  const insurersLine = p.insurers?.length
-    ? `Payment: ${p.insurers.join(", ")}`
-    : (p.insurers_raw ? `Payment: ${p.insurers_raw}` : null);
-  const langsLine = p.languages?.length ? `Languages: ${p.languages.join(", ")}` : null;
-  const stylesLine = p.styles ? `Styles: ${p.styles}` : null;
-  const livedLine = p.lived_experience ? `Personal Experiences: ${p.lived_experience}` : null;
-  const emailLine = p.email ? `Email: ${p.email}` : null;
-
-  return [
-    nameLine,
-    typeLine,
-    statesLine,
-    insurersLine,
-    langsLine,
-    stylesLine,
-    livedLine,
-    emailLine
-  ].filter(Boolean).join("\n");
+// (CHANGE 1) — one-line provider directory row
+function providerLine(p){
+  const parts = [
+    p.id,
+    p.name,
+    p.role || "provider",
+    p.licensed_states?.length ? `states=${p.licensed_states.join(",")}` : null,
+    p.insurers?.length ? `insurers=${p.insurers.join(",")}` : (p.insurers_raw ? `insurers=${p.insurers_raw}` : null),
+    p.languages?.length ? `langs=${p.languages.join(",")}` : null,
+    p.styles ? `styles=${p.styles}` : null,
+    p.lived_experience ? `lived=${p.lived_experience}` : null,
+    p.email ? `email=${p.email}` : null
+  ].filter(Boolean);
+  return parts.join(" | ");
 }
 
+// (CHANGE 2) — include only next 10 openings per included provider
 function scheduleIndexLinesFor(ids){
-  // Build compact index only for chosen provider ids
   const lines = [];
   let usedChars = 0;
   let usedRows = 0;
@@ -380,9 +369,13 @@ function scheduleIndexLinesFor(ids){
   for (const id of ids){
     const arr = SLOTS_BY_ID.get(id);
     if (!arr || !arr.length) continue;
-    const line = `${id}: ${arr.join(", ")}`;
+
+    const top10 = arr.slice(0, 10).join(", ");
+    const line = `${id}: ${top10}`;
+
     const nextChars = usedChars + line.length + 1;
     if (nextChars > SCHEDULE_CONTEXT_CHAR_BUDGET || usedRows >= SCHEDULE_LINES_HARD_CAP) break;
+
     lines.push(line);
     usedChars = nextChars;
     usedRows++;
