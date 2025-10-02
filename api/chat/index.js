@@ -42,6 +42,7 @@ const STYLE_GUIDE = `
 ## Provider output format (detailed cards)
 When listing provider matches, use this exact multi-line block per provider:
 
+```
 Name: {name}  
 Mental Health Care Type: {Role}  
 Personal Experiences: {lived_experience_list or “Not specified”}  
@@ -49,6 +50,7 @@ State: {statesCSV}
 Payment Types: {Cash pay + insurers}  
 Languages: {languagesCSV}  
 Soonest Slot: {Weekday (MM-DD-YY)} at {HH:MM AM/PM}
+```
 
 Field rules:
 - **Name:** Use provider’s full name as given.  
