@@ -353,19 +353,28 @@ function scoreProvider(p, hints){
   return score;
 }
 
-function providerLine(p){
-  const parts = [
-    p.id,
-    p.name,
-    p.role || "provider",
-    p.licensed_states?.length ? `states=${p.licensed_states.join(",")}` : null,
-    p.insurers?.length ? `insurers=${p.insurers.join(",")}` : (p.insurers_raw ? `insurers=${p.insurers_raw}` : null),
-    p.languages?.length ? `langs=${p.languages.join(",")}` : null,
-    p.styles ? `styles=${p.styles}` : null,
-    p.lived_experience ? `lived=${p.lived_experience}` : null,
-    p.email ? `email=${p.email}` : null
-  ].filter(Boolean);
-  return parts.join(" | ");
+function providerLine(p) {
+  const nameLine = `Name: ${p.name}`;
+  const typeLine = `Type: ${p.role.charAt(0).toUpperCase() + p.role.slice(1)}`;
+  const statesLine = p.licensed_states?.length ? `States: ${p.licensed_states.join(", ")}` : null;
+  const insurersLine = p.insurers?.length
+    ? `Payment: ${p.insurers.join(", ")}`
+    : (p.insurers_raw ? `Payment: ${p.insurers_raw}` : null);
+  const langsLine = p.languages?.length ? `Languages: ${p.languages.join(", ")}` : null;
+  const stylesLine = p.styles ? `Styles: ${p.styles}` : null;
+  const livedLine = p.lived_experience ? `Personal Experiences: ${p.lived_experience}` : null;
+  const emailLine = p.email ? `Email: ${p.email}` : null;
+
+  return [
+    nameLine,
+    typeLine,
+    statesLine,
+    insurersLine,
+    langsLine,
+    stylesLine,
+    livedLine,
+    emailLine
+  ].filter(Boolean).join("\n");
 }
 
 function scheduleIndexLinesFor(ids){
