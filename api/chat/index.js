@@ -9,12 +9,12 @@ const DEFAULT_MAX_COMPLETION_TOKENS = 2048; // floor; client can request more
 const MAX_PROVIDERS_LINES_DEBUG_PREVIEW = 5; // only for ?debug=1 payload brevity
 
 // Filtering / context sizing
-const PROVIDER_CONTEXT_CHAR_BUDGET = 12000;      // ~12k chars for providers
-const SCHEDULE_CONTEXT_CHAR_BUDGET = 6000;       // ~6k chars for schedule
-const PROVIDER_HARD_CAP = 300;                   // absolute max lines emitted
-const SCHEDULE_LINES_HARD_CAP = 600;             // absolute max schedule rows
-const HINT_WEIGHT_BONUS = 4;                     // score bonus for matches
-const SECONDARY_WEIGHT_BONUS = 2;                // softer match bonus
+const PROVIDER_CONTEXT_CHAR_BUDGET = 12000; // ~12k chars for providers
+const SCHEDULE_CONTEXT_CHAR_BUDGET = 6000;  // ~6k chars for schedule
+const PROVIDER_HARD_CAP = 300;              // absolute max lines emitted
+const SCHEDULE_LINES_HARD_CAP = 600;        // absolute max schedule rows
+const HINT_WEIGHT_BONUS = 4;                // score bonus for matches
+const SECONDARY_WEIGHT_BONUS = 2;           // softer match bonus
 
 // Lazy-loaded globals
 let SYS_PROMPT = "", FAQ_SNIPPET = "", POLICIES_SNIPPET = "";
@@ -26,6 +26,7 @@ let SLOTS = [];     // structured slots
 function readIfExists(p){ try{ return fs.readFileSync(p, "utf8"); } catch { return ""; } }
 const norm = s => (s||"").toString().trim();
 
+// ------------------------ Init ------------------------
 function initConfig(){
   if (SYS_PROMPT) return; // cold-start only
 
@@ -59,8 +60,7 @@ ${POLICIES_SNIPPET}`.trim();
   SLOTS     = parseSchedule(PROVIDER_SCHEDULE_TXT);
 }
 
-// -------- Robust Parsing (no keyword triggers)
-
+// ------------------------ Parsing ------------------------
 function parseProviders(raw){
   if (!raw || !raw.trim()) return [];
 
@@ -78,7 +78,7 @@ function parseProviders(raw){
   // Build blocks by header lines that start with prov_###
   for (const lineRaw of lines){
     const line = (lineRaw || "").trim();
-    if (!line) { 
+    if (!line) {
       cur.push("");
       continue;
     }
@@ -92,7 +92,6 @@ function parseProviders(raw){
   if (cur.length) blocks.push(cur);
 
   const out = [];
-
   for (const arr of blocks){
     if (!arr.length) continue;
 
@@ -186,7 +185,7 @@ function parseSchedule(txt){
   return items;
 }
 
-// -------- Hints extraction
+// ------------------------ Hints (for filtering) ------------------------
 function extractHintsFromHistory(history, latestUserMessage){
   const allText = (history.map(h => h.content).join(" ") + " " + (latestUserMessage||"")).toLowerCase();
 
@@ -223,35 +222,14 @@ function extractHintsFromHistory(history, latestUserMessage){
   const prefersTherap = /\btherap(y|ist)\b/.test(allText);
   const prefersBoth   = /both\b|combo|combined/.test(allText);
 
-  // Language/gender cues (soft)
-  const wantsFemale = /\bfemale|woman|women|she\/her\b/i.test(allText);
-  const wantsMale   = /\bmale|man|men|he\/him\b/i.test(allText);
+  // Language cues (soft)
   const langMatch   = allText.match(/\b(english|spanish|mandarin|hindi|arabic|french|portuguese|german|asl)\b/i);
   const language    = (langMatch?.[1] || "").toLowerCase() || "english";
 
-  return { state, wantsCash, plan, prefersPsych, prefersTherap, prefersBoth, wantsFemale, wantsMale, language };
+  return { state, wantsCash, plan, prefersPsych, prefersTherap, prefersBoth, language };
 }
 
-// -------- Force-include provider(s) mentioned by user text (by name)
-function providersMentionedByUser(text){
-  const t = (text || "").toLowerCase();
-  if (!t) return [];
-  const tokens = t.split(/[^a-z]+/i).filter(w => w.length >= 3);
-  if (!tokens.length) return [];
-  return PROVIDERS.filter(p => {
-    const name = (p.name || "").toLowerCase();
-    return tokens.some(tok => name.includes(tok));
-  });
-}
-
-function forceIncludeMentionedProviders(latestUserMessage) {
-  const mentioned = providersMentionedByUser(latestUserMessage);
-  const idSet = new Set(mentioned.map(p => p.id));
-  return { mentioned, idSet };
-}
-
-// -------- Filtering & context building (internal directory for the model)
-
+// ------------------------ Scoring & context ------------------------
 function scoreProvider(p, hints){
   let score = 0;
 
@@ -312,33 +290,25 @@ function scheduleIndexLinesFor(ids){
   return lines;
 }
 
-function buildDatasetContextFiltered(hints, latestUserMessage){
-  const { mentioned, idSet } = forceIncludeMentionedProviders(latestUserMessage);
-
-  // Score normally
+function buildDatasetContextFiltered(hints){
   const scored = PROVIDERS.map(p => ({ p, s: scoreProvider(p, hints) }));
   scored.sort((a,b) => b.s - a.s);
 
-  // Mentioned first, then others (no duplicates)
-  const ordered = [
-    ...mentioned,
-    ...scored.map(x => x.p).filter(p => !idSet.has(p.id))
-  ];
+  const ordered = scored.map(x => x.p);
 
   const lines = [];
-  const includedIds = [];
   let used = 0;
   for (const p of ordered){
     const line = providerLine(p);
     const next = used + line.length + 1;
     if (next > PROVIDER_CONTEXT_CHAR_BUDGET || lines.length >= PROVIDER_HARD_CAP) break;
     lines.push(line);
-    includedIds.push(p.id);
     used = next;
   }
 
-  // Build availability ONLY for included IDs
-  const schedLines = scheduleIndexLinesFor(includedIds);
+  // Build availability (only for providers we actually included)
+  const chosenIds = new Set(lines.map(l => (l.split(" | ")[0] || "").trim()).filter(Boolean));
+  const schedLines = scheduleIndexLinesFor(chosenIds);
 
   const visibleDirectory = `
 # Provider Directory (use ONLY entries here; do not invent)
@@ -353,7 +323,7 @@ ${schedLines.join("\n")}`.trim() : "";
   return `${visibleDirectory}\n\n${hiddenSchedule}`.trim();
 }
 
-// -------- Slot indexing
+// ------------------------ Slots index ------------------------
 let SLOTS_BY_ID = new Map();
 function indexSlots(){
   SLOTS_BY_ID = new Map();
@@ -363,7 +333,83 @@ function indexSlots(){
   }
 }
 
-// ===== Deterministic “slots” renderer (bypass LLM) =====
+// ------------------------ AOAI ------------------------
+async function callAOAI(url, messages, temperature, maxTokens, apiKey){
+  const resp = await fetch(url, {
+    method:"POST",
+    headers:{ "Content-Type":"application/json", "api-key": apiKey },
+    body: JSON.stringify({
+      messages,
+      temperature,
+      max_completion_tokens: maxTokens
+    })
+  });
+  const ct = resp.headers.get("content-type") || "";
+  const data = ct.includes("application/json") ? await resp.json() : { text: await resp.text() };
+  return { resp, data };
+}
+
+// ======================================================================
+// Provider name matching & slots hard-branch utilities
+// ======================================================================
+function providersMentionedByUser(text){
+  const q = (text || "").toLowerCase().replace(/[^a-z0-9\s]/g, " ").replace(/\s+/g, " ").trim();
+  if (!q) return [];
+
+  const scored = [];
+  for (const p of PROVIDERS){
+    const name = (p.name || "").toLowerCase();
+    const nameNoCred = name.replace(/\s*\([^)]+\)\s*$/, "").trim(); // strip (LMFT) etc.
+    const nameTokens = nameNoCred.split(/\s+/).filter(Boolean);
+
+    let score = 0;
+
+    // exact full name match
+    if (q === nameNoCred) score += 100;
+
+    // contains full name as a substring
+    if (q.includes(nameNoCred)) score += 50;
+
+    // first+last token match
+    if (nameTokens.length >= 2) {
+      const firstLast = `${nameTokens[0]} ${nameTokens[nameTokens.length - 1]}`;
+      if (q === firstLast) score += 80;
+      if (q.includes(firstLast)) score += 40;
+    }
+
+    // token overlap
+    const qTokens = q.split(" ").filter(Boolean);
+    const overlap = qTokens.filter(t => nameNoCred.includes(t)).length;
+    if (overlap) score += overlap * 5;
+
+    // slight boost if last name appears verbatim
+    if (nameTokens.length) {
+      const last = nameTokens[nameTokens.length - 1];
+      if (qTokens.includes(last)) score += 10;
+    }
+
+    if (score > 0) scored.push({ p, score });
+  }
+
+  scored.sort((a,b) => b.score - a.score);
+  return scored.map(x => x.p);
+}
+
+function mostRecentProviderFromHistory(history){
+  for (let i = history.length - 1; i >= 0; i--){
+    if (history[i]?.role !== "user") continue;
+    const txt = (history[i].content || "");
+    const matches = providersMentionedByUser(txt);
+    if (matches.length) return matches[0];
+  }
+  return null;
+}
+
+function looksLikeSlotsRequest(text){
+  const t = (text || "").toLowerCase();
+  return /\b(slot|availability|available|openings?|times?|schedule)\b/.test(t);
+}
+
 function extractCredentialFromName(name) {
   const m = (name || "").match(/\(([A-Za-z0-9 ,.+-]+)\)\s*$/);
   return m ? m[1].trim() : "";
@@ -391,22 +437,22 @@ function formatTime(hhmm){
   return `${h}:${String(m).padStart(2,"0")} ${ampm}`;
 }
 function providerCardWithSlots(p, count = 10){
-  const cred = extractCredentialFromName(p.name); // e.g. "LPC"
+  const cred = extractCredentialFromName(p.name);
   const nameNoCred = (p.name || "").replace(/\s*\([^)]+\)\s*$/, "").trim();
 
-  const careType = careTypeLabel(p.role); // "therapy" | "psychiatry" | "both" | "provider"
+  const careType = careTypeLabel(p.role);
   const states = (p.licensed_states || []).join(", ");
   const payment = p.insurers?.length ? p.insurers.join(", ") : (p.insurers_raw || "Cash");
   const languages = (p.languages || []).join(", ");
   const lived = p.lived_experience ? p.lived_experience : "Not specified";
 
-  // Up to `count` soonest slots (checkbox style)
+  // Up to 10 soonest slots (no checkboxes)
   const slots = (SLOTS_BY_ID.get(p.id) || []).slice(0, count);
   const slotLines = slots.map(dt => {
     const [date, time] = dt.split(" ");
     const { dow, mmddyyyy } = formatDateParts(date);
     const time12 = formatTime(time);
-    return `[ ] ${time12}, ${dow}, ${mmddyyyy}`;
+    return `${time12}, ${dow}, ${mmddyyyy}`;
   });
 
   const lines = [
@@ -423,28 +469,7 @@ function providerCardWithSlots(p, count = 10){
   return lines.join("\n");
 }
 
-function looksLikeSlotsRequest(text){
-  const t = (text || "").toLowerCase();
-  return /\b(slot|slots|availability|available|openings|times?|appointments?)\b/.test(t);
-}
-
-// -------- Azure OpenAI call
-async function callAOAI(url, messages, temperature, maxTokens, apiKey){
-  const resp = await fetch(url, {
-    method:"POST",
-    headers:{ "Content-Type":"application/json", "api-key": apiKey },
-    body: JSON.stringify({
-      messages,
-      temperature,
-      max_completion_tokens: maxTokens
-    })
-  });
-  const ct = resp.headers.get("content-type") || "";
-  const data = ct.includes("application/json") ? await resp.json() : { text: await resp.text() };
-  return { resp, data };
-}
-
-// Main HTTP handler
+// ------------------------ Main HTTP handler ------------------------
 module.exports = async function (context, req){
   try{
     initConfig();
@@ -456,42 +481,12 @@ module.exports = async function (context, req){
       return;
     }
 
-    // Keep only last N turns and trim content (UI already limits)
+    // Keep only last N turns and trim content
     const history = Array.isArray(req.body?.history) ? req.body.history : [];
     const normalizedHistory = history
       .slice(-MAX_HISTORY_TURNS)
       .map(m => ({ role: m?.role === "assistant" ? "assistant" : "user", content: norm(m?.content) }))
       .filter(m => m.content);
-
-    // ===== Hard-branch: user asked for slots for a named provider
-    if (looksLikeSlotsRequest(userMessage)) {
-      const mentioned = providersMentionedByUser(userMessage);
-      if (mentioned.length >= 1) {
-        // If multiple are mentioned, show the first one with 10 slots.
-        // (You can expand to show multiple cards if you’d like.)
-        const p = mentioned[0];
-        const reply = providerCardWithSlots(p, 10);
-
-        if (req.query?.debug === "1"){
-          context.res = {
-            status:200,
-            headers:{ "Content-Type":"application/json" },
-            body:{
-              reply,
-              debug_reason: "hard-branch slots response",
-              provider_id: p.id,
-              provider_name: p.name,
-              slots_found: (SLOTS_BY_ID.get(p.id) || []).length
-            }
-          };
-          return;
-        }
-
-        context.res = { status:200, headers:{ "Content-Type":"application/json" }, body:{ reply } };
-        return;
-      }
-      // If user asked for slots but no provider name matched, fall through to LLM.
-    }
 
     // AOAI env
     const apiVersion = norm(process.env.AZURE_OPENAI_API_VERSION || "2024-08-01-preview");
@@ -506,10 +501,46 @@ module.exports = async function (context, req){
 
     const url = `${endpoint.replace(/\/+$/,"")}/openai/deployments/${deployment}/chat/completions?api-version=${apiVersion}`;
 
-    // Build filtered dataset context (with force-include by name)
+    // ----- HARD BRANCH: explicit/implicit slot requests -----
+    if (looksLikeSlotsRequest(userMessage)) {
+      let picked = null;
+
+      // 1) try latest message
+      const mentionedNow = providersMentionedByUser(userMessage);
+      if (mentionedNow.length) {
+        picked = mentionedNow[0];
+      } else {
+        // 2) fallback to most recent provider mentioned in prior user turns
+        picked = mostRecentProviderFromHistory(normalizedHistory);
+      }
+
+      if (picked) {
+        const reply = providerCardWithSlots(picked, 10);
+
+        if (req.query?.debug === "1"){
+          context.res = {
+            status:200,
+            headers:{ "Content-Type":"application/json" },
+            body:{
+              reply,
+              debug_reason: "hard-branch slots response",
+              provider_id: picked.id,
+              provider_name: picked.name,
+              total_slots_for_provider: (SLOTS_BY_ID.get(picked.id) || []).length
+            }
+          };
+          return;
+        }
+
+        context.res = { status:200, headers:{ "Content-Type":"application/json" }, body:{ reply } };
+        return;
+      }
+      // If no provider identified, fall through to LLM
+    }
+
+    // Build filtered dataset context
     const hints = extractHintsFromHistory(normalizedHistory, userMessage);
-    const { mentioned } = forceIncludeMentionedProviders(userMessage);
-    const directoryContext = buildDatasetContextFiltered(hints, userMessage);
+    const directoryContext = buildDatasetContextFiltered(hints);
 
     // Compose messages
     const systemContent =
@@ -546,20 +577,20 @@ module.exports = async function (context, req){
 
     // Debug payload
     if (req.query?.debug === "1"){
-      const dataDir = path.join(__dirname, "../_data");
-      const provPath = path.join(dataDir, "providers_100.txt");
-      const slotPath = path.join(dataDir, "provider_schedule_14d.txt");
-
-      // tiny preview for sanity (first few provider lines as actually parsed)
       const directoryPreview = PROVIDERS.slice(0, MAX_PROVIDERS_LINES_DEBUG_PREVIEW).map(p =>
         [p.id, p.name, p.role, (p.licensed_states||[]).join(","), (p.insurers||[]).join(","), (p.languages||[]).join(","), p.email].join(" | ")
       );
 
-      // show some filtered sample too
       const filteredFirstLines = directoryContext
         .split("\n")
         .filter(l => l.startsWith("prov_"))
         .slice(0, MAX_PROVIDERS_LINES_DEBUG_PREVIEW);
+
+      const topForCards = PROVIDERS
+        .map(p => ({ p, s: scoreProvider(p, hints) }))
+        .sort((a,b) => b.s - a.s)
+        .slice(0, 3)
+        .map(x => providerCardWithSlots(x.p));
 
       context.res = {
         status:200,
@@ -577,13 +608,11 @@ module.exports = async function (context, req){
             provider_schedule_txt: !!PROVIDER_SCHEDULE_TXT
           },
           provider_counts: { providers: PROVIDERS.length, slots: SLOTS.length },
-          provider_paths: { providers_file: provPath, schedule_file: slotPath },
           directory_preview: directoryPreview,
           filtered_preview: filteredFirstLines,
-          hard_branch_note: looksLikeSlotsRequest(userMessage) ? "slots requested but no unique provider matched; answered via LLM" : "normal",
+          cards_preview: topForCards,
           history_len: normalizedHistory.length,
-          hints,
-          mentioned_providers: mentioned.map(p => ({ id:p.id, name:p.name }))
+          hints
         }
       };
       return;
