@@ -236,7 +236,6 @@ function extractHintsFromHistory(history, latestUserMessage){
 function providersMentionedByUser(text){
   const t = (text || "").toLowerCase();
   if (!t) return [];
-  // very light token match; requires any 3+ char token in provider name
   const tokens = t.split(/[^a-z]+/i).filter(w => w.length >= 3);
   if (!tokens.length) return [];
   return PROVIDERS.filter(p => {
@@ -295,7 +294,6 @@ function providerLine(p){
   return parts.join(" | ");
 }
 
-// Accept **array** of IDs explicitly
 function scheduleIndexLinesFor(ids){
   const lines = [];
   let usedChars = 0;
@@ -327,7 +325,6 @@ function buildDatasetContextFiltered(hints, latestUserMessage){
     ...scored.map(x => x.p).filter(p => !idSet.has(p.id))
   ];
 
-  // Build provider lines while tracking WHICH IDs we included
   const lines = [];
   const includedIds = [];
   let used = 0;
@@ -366,6 +363,71 @@ function indexSlots(){
   }
 }
 
+// ===== Deterministic “slots” renderer (bypass LLM) =====
+function extractCredentialFromName(name) {
+  const m = (name || "").match(/\(([A-Za-z0-9 ,.+-]+)\)\s*$/);
+  return m ? m[1].trim() : "";
+}
+function careTypeLabel(role) {
+  if (!role) return "provider";
+  if (role === "psychiatrist") return "psychiatry";
+  if (role === "therapist") return "therapy";
+  if (role === "both") return "both";
+  return "provider";
+}
+function formatDateParts(yyyyMmDd){
+  const [y, m, d] = yyyyMmDd.split("-").map(n => parseInt(n, 10));
+  const date = new Date(Date.UTC(y, m-1, d));
+  const DOW = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+  const dow = DOW[date.getUTCDay()];
+  const mm = String(m).padStart(2,"0");
+  const dd = String(d).padStart(2,"0");
+  return { dow, mmddyyyy: `${mm}/${dd}/${y}` };
+}
+function formatTime(hhmm){
+  let [h, m] = hhmm.split(":").map(n => parseInt(n, 10));
+  const ampm = h >= 12 ? "PM" : "AM";
+  h = h % 12; if (h === 0) h = 12;
+  return `${h}:${String(m).padStart(2,"0")} ${ampm}`;
+}
+function providerCardWithSlots(p, count = 10){
+  const cred = extractCredentialFromName(p.name); // e.g. "LPC"
+  const nameNoCred = (p.name || "").replace(/\s*\([^)]+\)\s*$/, "").trim();
+
+  const careType = careTypeLabel(p.role); // "therapy" | "psychiatry" | "both" | "provider"
+  const states = (p.licensed_states || []).join(", ");
+  const payment = p.insurers?.length ? p.insurers.join(", ") : (p.insurers_raw || "Cash");
+  const languages = (p.languages || []).join(", ");
+  const lived = p.lived_experience ? p.lived_experience : "Not specified";
+
+  // Up to `count` soonest slots (checkbox style)
+  const slots = (SLOTS_BY_ID.get(p.id) || []).slice(0, count);
+  const slotLines = slots.map(dt => {
+    const [date, time] = dt.split(" ");
+    const { dow, mmddyyyy } = formatDateParts(date);
+    const time12 = formatTime(time);
+    return `[ ] ${time12}, ${dow}, ${mmddyyyy}`;
+  });
+
+  const lines = [
+    `Name: ${nameNoCred}`,
+    `Care Type: ${careType}${cred ? ` (title [${cred}])` : ""}`,
+    `Personal Experiences: ${lived}`,
+    `States: ${states || "Not specified"}`,
+    `Payment Types: ${payment}`,
+    `Languages: ${languages || "Not specified"}`,
+    `Soonest Appointment Slots:`,
+    ...(slotLines.length ? slotLines : ["(No upcoming availability listed)"]),
+  ];
+
+  return lines.join("\n");
+}
+
+function looksLikeSlotsRequest(text){
+  const t = (text || "").toLowerCase();
+  return /\b(slot|slots|availability|available|openings|times?|appointments?)\b/.test(t);
+}
+
 // -------- Azure OpenAI call
 async function callAOAI(url, messages, temperature, maxTokens, apiKey){
   const resp = await fetch(url, {
@@ -401,6 +463,36 @@ module.exports = async function (context, req){
       .map(m => ({ role: m?.role === "assistant" ? "assistant" : "user", content: norm(m?.content) }))
       .filter(m => m.content);
 
+    // ===== Hard-branch: user asked for slots for a named provider
+    if (looksLikeSlotsRequest(userMessage)) {
+      const mentioned = providersMentionedByUser(userMessage);
+      if (mentioned.length >= 1) {
+        // If multiple are mentioned, show the first one with 10 slots.
+        // (You can expand to show multiple cards if you’d like.)
+        const p = mentioned[0];
+        const reply = providerCardWithSlots(p, 10);
+
+        if (req.query?.debug === "1"){
+          context.res = {
+            status:200,
+            headers:{ "Content-Type":"application/json" },
+            body:{
+              reply,
+              debug_reason: "hard-branch slots response",
+              provider_id: p.id,
+              provider_name: p.name,
+              slots_found: (SLOTS_BY_ID.get(p.id) || []).length
+            }
+          };
+          return;
+        }
+
+        context.res = { status:200, headers:{ "Content-Type":"application/json" }, body:{ reply } };
+        return;
+      }
+      // If user asked for slots but no provider name matched, fall through to LLM.
+    }
+
     // AOAI env
     const apiVersion = norm(process.env.AZURE_OPENAI_API_VERSION || "2024-08-01-preview");
     const endpoint   = norm(process.env.AZURE_OPENAI_ENDPOINT || "");
@@ -416,6 +508,7 @@ module.exports = async function (context, req){
 
     // Build filtered dataset context (with force-include by name)
     const hints = extractHintsFromHistory(normalizedHistory, userMessage);
+    const { mentioned } = forceIncludeMentionedProviders(userMessage);
     const directoryContext = buildDatasetContextFiltered(hints, userMessage);
 
     // Compose messages
@@ -484,14 +577,13 @@ module.exports = async function (context, req){
             provider_schedule_txt: !!PROVIDER_SCHEDULE_TXT
           },
           provider_counts: { providers: PROVIDERS.length, slots: SLOTS.length },
-          provider_paths: {
-            providers_file: provPath,
-            schedule_file: slotPath
-          },
+          provider_paths: { providers_file: provPath, schedule_file: slotPath },
           directory_preview: directoryPreview,
           filtered_preview: filteredFirstLines,
+          hard_branch_note: looksLikeSlotsRequest(userMessage) ? "slots requested but no unique provider matched; answered via LLM" : "normal",
           history_len: normalizedHistory.length,
-          hints
+          hints,
+          mentioned_providers: mentioned.map(p => ({ id:p.id, name:p.name }))
         }
       };
       return;
