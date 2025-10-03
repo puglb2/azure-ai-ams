@@ -14,7 +14,7 @@ const SCHEDULE_CONTEXT_CHAR_BUDGET = 6000;       // ~6k chars for schedule
 const PROVIDER_HARD_CAP = 300;                   // absolute max lines emitted
 const SCHEDULE_LINES_HARD_CAP = 600;             // absolute max schedule rows
 const HINT_WEIGHT_BONUS = 4;                     // score bonus for matches
-the SECONDARY_WEIGHT_BONUS = 2;                  // softer match bonus
+const SECONDARY_WEIGHT_BONUS = 2;                  // softer match bonus
 
 // Lazy-loaded globals
 let SYS_PROMPT = "", FAQ_SNIPPET = "", POLICIES_SNIPPET = "";
