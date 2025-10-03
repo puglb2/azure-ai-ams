@@ -89,7 +89,7 @@ export default function App() {
         {messages.map((m,i)=>(
           <div key={i} style={{margin:'10px 0', lineHeight:1.35}}>
             <div style={{fontWeight:600, marginBottom:2}}>{m.role==='user'?'You':'Assistant'}</div>
-            <div>{m.content}</div>
+            <div style={{ whiteSpace: 'pre-wrap' }}>{m.content}</div>
           </div>
         ))}
         {busy && <div style={{marginTop:8, color:'#777', fontStyle:'italic'}}>Assistant is typing…</div>}
