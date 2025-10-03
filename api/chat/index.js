@@ -173,7 +173,7 @@ function parseSchedule(txt){
     .filter(Boolean)
     .map(line => {
       const parts = line.split("|").map(p => p.trim());
-      if (parts.length < 3) return null;
+      if (parts.length < 10) return null;
       const [id, date, time] = parts;
       if (!/^prov_\d+/i.test(id)) return null;
       if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return null;
