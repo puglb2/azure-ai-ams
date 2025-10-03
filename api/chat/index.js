@@ -14,7 +14,7 @@ const SCHEDULE_CONTEXT_CHAR_BUDGET = 6000;       // ~6k chars for schedule
 const PROVIDER_HARD_CAP = 300;                   // absolute max lines emitted
 const SCHEDULE_LINES_HARD_CAP = 600;             // absolute max schedule rows
 const HINT_WEIGHT_BONUS = 4;                     // score bonus for matches
-const SECONDARY_WEIGHT_BONUS = 2;                  // softer match bonus
+const SECONDARY_WEIGHT_BONUS = 2;                // softer match bonus
 
 // Lazy-loaded globals
 let SYS_PROMPT = "", FAQ_SNIPPET = "", POLICIES_SNIPPET = "";
@@ -173,7 +173,7 @@ function parseSchedule(txt){
     .filter(Boolean)
     .map(line => {
       const parts = line.split("|").map(p => p.trim());
-      if (parts.length < 10) return null;
+      if (parts.length < 3) return null;
       const [id, date, time] = parts;
       if (!/^prov_\d+/i.test(id)) return null;
       if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return null;
@@ -232,6 +232,25 @@ function extractHintsFromHistory(history, latestUserMessage){
   return { state, wantsCash, plan, prefersPsych, prefersTherap, prefersBoth, wantsFemale, wantsMale, language };
 }
 
+// -------- Force-include provider(s) mentioned by user text (by name)
+function providersMentionedByUser(text){
+  const t = (text || "").toLowerCase();
+  if (!t) return [];
+  // very light token match; requires any 3+ char token in provider name
+  const tokens = t.split(/[^a-z]+/i).filter(w => w.length >= 3);
+  if (!tokens.length) return [];
+  return PROVIDERS.filter(p => {
+    const name = (p.name || "").toLowerCase();
+    return tokens.some(tok => name.includes(tok));
+  });
+}
+
+function forceIncludeMentionedProviders(latestUserMessage) {
+  const mentioned = providersMentionedByUser(latestUserMessage);
+  const idSet = new Set(mentioned.map(p => p.id));
+  return { mentioned, idSet };
+}
+
 // -------- Filtering & context building (internal directory for the model)
 
 function scoreProvider(p, hints){
@@ -276,6 +295,7 @@ function providerLine(p){
   return parts.join(" | ");
 }
 
+// Accept **array** of IDs explicitly
 function scheduleIndexLinesFor(ids){
   const lines = [];
   let usedChars = 0;
@@ -294,25 +314,34 @@ function scheduleIndexLinesFor(ids){
   return lines;
 }
 
-function buildDatasetContextFiltered(hints){
+function buildDatasetContextFiltered(hints, latestUserMessage){
+  const { mentioned, idSet } = forceIncludeMentionedProviders(latestUserMessage);
+
+  // Score normally
   const scored = PROVIDERS.map(p => ({ p, s: scoreProvider(p, hints) }));
   scored.sort((a,b) => b.s - a.s);
 
-  const ordered = scored.map(x => x.p);
+  // Mentioned first, then others (no duplicates)
+  const ordered = [
+    ...mentioned,
+    ...scored.map(x => x.p).filter(p => !idSet.has(p.id))
+  ];
 
+  // Build provider lines while tracking WHICH IDs we included
   const lines = [];
+  const includedIds = [];
   let used = 0;
   for (const p of ordered){
     const line = providerLine(p);
     const next = used + line.length + 1;
     if (next > PROVIDER_CONTEXT_CHAR_BUDGET || lines.length >= PROVIDER_HARD_CAP) break;
     lines.push(line);
+    includedIds.push(p.id);
     used = next;
   }
 
-  // Build availability (only for providers we actually included)
-  const chosenIds = new Set(lines.map(l => (l.split(" | ")[0] || "").trim()).filter(Boolean));
-  const schedLines = scheduleIndexLinesFor(chosenIds);
+  // Build availability ONLY for included IDs
+  const schedLines = scheduleIndexLinesFor(includedIds);
 
   const visibleDirectory = `
 # Provider Directory (use ONLY entries here; do not invent)
@@ -353,70 +382,6 @@ async function callAOAI(url, messages, temperature, maxTokens, apiKey){
   return { resp, data };
 }
 
-// ======================================================================
-// HARD-CODED CARD RENDERER (10 slots, checkbox style) — display only
-// ======================================================================
-
-function extractCredentialFromName(name) {
-  const m = (name || "").match(/\(([A-Za-z0-9 ,.+-]+)\)\s*$/);
-  return m ? m[1].trim() : "";
-}
-function careTypeLabel(role) {
-  if (!role) return "provider";
-  if (role === "psychiatrist") return "psychiatry";
-  if (role === "therapist") return "therapy";
-  if (role === "both") return "both";
-  return "provider";
-}
-function formatDateParts(yyyyMmDd){
-  const [y, m, d] = yyyyMmDd.split("-").map(n => parseInt(n, 10));
-  const date = new Date(Date.UTC(y, m-1, d));
-  const DOW = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
-  const dow = DOW[date.getUTCDay()];
-  const mm = String(m).padStart(2,"0");
-  const dd = String(d).padStart(2,"0");
-  return { dow, mmddyyyy: `${mm}/${dd}/${y}` };
-}
-function formatTime(hhmm){
-  let [h, m] = hhmm.split(":").map(n => parseInt(n, 10));
-  const ampm = h >= 12 ? "PM" : "AM";
-  h = h % 12; if (h === 0) h = 12;
-  return `${h}:${String(m).padStart(2,"0")} ${ampm}`;
-}
-function providerCardWithSlots(p){
-  const cred = extractCredentialFromName(p.name); // e.g. "LPC"
-  const nameNoCred = (p.name || "").replace(/\s*\([^)]+\)\s*$/, "").trim();
-
-  const careType = careTypeLabel(p.role); // "therapy" | "psychiatry" | "both" | "provider"
-  const states = (p.licensed_states || []).join(", ");
-  const payment = p.insurers?.length ? p.insurers.join(", ") : (p.insurers_raw || "Cash");
-  const languages = (p.languages || []).join(", ");
-  const lived = p.lived_experience ? p.lived_experience : "Not specified";
-
-  // Up to 10 soonest slots (checkbox style)
-  const slots = (SLOTS_BY_ID.get(p.id) || []).slice(0, 10);
-  const slotLines = slots.map(dt => {
-    const [date, time] = dt.split(" ");
-    const { dow, mmddyyyy } = formatDateParts(date);
-    const time12 = formatTime(time);
-    return `${time12}, ${dow}, ${mmddyyyy}`;
-    // Example: 9:00 AM, Thursday, 10/03/2025
-  });
-
-  const lines = [
-    `Name: ${nameNoCred}`,
-    `Care Type: ${careType}${cred ? ` (title [${cred}])` : ""}`,
-    `Personal Experiences: ${lived}`,
-    `States: ${states || "Not specified"}`,
-    `Payment Types: ${payment}`,
-    `Languages: ${languages || "Not specified"}`,
-    `Soonest Appointment Slots:`,
-    ...(slotLines.length ? slotLines : ["(No upcoming availability listed)"]),
-  ];
-
-  return lines.join("\n");
-}
-
 // Main HTTP handler
 module.exports = async function (context, req){
   try{
@@ -449,9 +414,9 @@ module.exports = async function (context, req){
 
     const url = `${endpoint.replace(/\/+$/,"")}/openai/deployments/${deployment}/chat/completions?api-version=${apiVersion}`;
 
-    // Build filtered dataset context
+    // Build filtered dataset context (with force-include by name)
     const hints = extractHintsFromHistory(normalizedHistory, userMessage);
-    const directoryContext = buildDatasetContextFiltered(hints);
+    const directoryContext = buildDatasetContextFiltered(hints, userMessage);
 
     // Compose messages
     const systemContent =
@@ -488,7 +453,11 @@ module.exports = async function (context, req){
 
     // Debug payload
     if (req.query?.debug === "1"){
-      // tiny preview for sanity (first few provider lines as parsed)
+      const dataDir = path.join(__dirname, "../_data");
+      const provPath = path.join(dataDir, "providers_100.txt");
+      const slotPath = path.join(dataDir, "provider_schedule_14d.txt");
+
+      // tiny preview for sanity (first few provider lines as actually parsed)
       const directoryPreview = PROVIDERS.slice(0, MAX_PROVIDERS_LINES_DEBUG_PREVIEW).map(p =>
         [p.id, p.name, p.role, (p.licensed_states||[]).join(","), (p.insurers||[]).join(","), (p.languages||[]).join(","), p.email].join(" | ")
       );
@@ -498,13 +467,6 @@ module.exports = async function (context, req){
         .split("\n")
         .filter(l => l.startsWith("prov_"))
         .slice(0, MAX_PROVIDERS_LINES_DEBUG_PREVIEW);
-
-      // Also include a "cards_preview" (hard-coded formatting) for the first 1–3 top-scored providers
-      const topForCards = PROVIDERS
-        .map(p => ({ p, s: scoreProvider(p, hints) }))
-        .sort((a,b) => b.s - a.s)
-        .slice(0, 3)
-        .map(x => providerCardWithSlots(x.p));
 
       context.res = {
         status:200,
@@ -522,9 +484,12 @@ module.exports = async function (context, req){
             provider_schedule_txt: !!PROVIDER_SCHEDULE_TXT
           },
           provider_counts: { providers: PROVIDERS.length, slots: SLOTS.length },
+          provider_paths: {
+            providers_file: provPath,
+            schedule_file: slotPath
+          },
           directory_preview: directoryPreview,
           filtered_preview: filteredFirstLines,
-          cards_preview: topForCards, // <— your new multiline cards with 10 slots each
           history_len: normalizedHistory.length,
           hints
         }
