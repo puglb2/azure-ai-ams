@@ -9,52 +9,17 @@ const DEFAULT_MAX_COMPLETION_TOKENS = 2048; // floor; client can request more
 const MAX_PROVIDERS_LINES_DEBUG_PREVIEW = 5; // only for ?debug=1 payload brevity
 
 // Filtering / context sizing
-const PROVIDER_CONTEXT_CHAR_BUDGET = 12000;      // ~12k chars for providers
-const SCHEDULE_CONTEXT_CHAR_BUDGET = 6000;       // ~6k chars for schedule
-const PROVIDER_HARD_CAP = 300;                   // absolute max lines emitted
-const SCHEDULE_LINES_HARD_CAP = 600;             // absolute max schedule rows
-const HINT_WEIGHT_BONUS = 4;                     // score bonus for matches
-const SECONDARY_WEIGHT_BONUS = 2;                // softer match bonus
+const PROVIDER_CONTEXT_CHAR_BUDGET = 12000; // ~12k chars for providers/cards
+const PROVIDER_HARD_CAP = 300;              // absolute max cards emitted
+const HINT_WEIGHT_BONUS = 4;                // score bonus for matches
+const SECONDARY_WEIGHT_BONUS = 2;           // softer match bonus
 
 // Lazy-loaded globals
 let SYS_PROMPT = "", FAQ_SNIPPET = "", POLICIES_SNIPPET = "";
 let PROVIDERS_TXT = "", PROVIDER_SCHEDULE_TXT = "";
 let PROVIDERS = []; // structured providers
 let SLOTS = [];     // structured slots
-
-// --- Response Style (format-only)
-const STYLE_GUIDE = `
-## Response style
-- Talk like a steady, real person—not a survey or therapist form.
-- Keep sentences short and clear, like texting a friend who trusts you.
-- Avoid repeating the user’s exact words. Paraphrase lightly.
-- Cut filler like “Thanks for sharing” unless it’s needed once in a while.
-- Ask one simple question at a time.
-- Use natural transitions like “Alright,” “Got it,” “Okay, next,” etc.
-
-## Conversation flow rules
-- If the user just says something brief like “hi”, “hello”, or similar, do NOT respond with “Got it” or jump into assessment questions.
-- Instead, warmly acknowledge the greeting (e.g. “Hey there!”) and follow it with an inviting, open-ended question like: “How have you been feeling?”
-- Avoid generic filler phrases like “Got it” when the user hasn’t actually shared information yet.
-- If the user engages with you on a personal level (e.g., “How’s your day going?”), respond naturally and briefly to keep the interaction warm and human (e.g., “It’s going good, thanks for asking! What’s been on your mind lately?”). Keep it friendly, but smoothly steer the conversation back to the intake flow so you stay on track and on brand.
-
-## Provider output format (detailed cards)
-When listing providers, use this exact layout (each field on its own line):
-
-Name: {Full Name}
-Care Type: {Therapy|Psychiatry} (title [{CREDENTIALS}])
-Personal Experiences: {comma-separated or "Not specified"}
-States: {state codes}
-Payment Types: {Cash first if present, then others}
-Languages: {English first if present}
-Soonest Appointment Slots:
-[_] {h:mm AM/PM}, {Weekday}, {MM/DD/YYYY}
-[_] ...
-... up to 10 slots
-
-After the list, add a short nudge line like:
-"Want me to hold one of these times, or keep browsing?"
-`.trim();
+let SLOTS_BY_ID = new Map(); // id -> ["YYYY-MM-DD HH:MM", ...]
 
 // Utils
 function readIfExists(p){ try{ return fs.readFileSync(p, "utf8"); } catch { return ""; } }
@@ -66,7 +31,7 @@ function initConfig(){
   const cfgDir  = path.join(__dirname, "../_config");
   const dataDir = path.join(__dirname, "../_data");
 
-  // Instruction files
+  // Instruction files (single source of truth lives in system_prompt.txt)
   SYS_PROMPT       = readIfExists(path.join(cfgDir, "system_prompt.txt")).trim();
   FAQ_SNIPPET      = readIfExists(path.join(cfgDir, "faqs.txt")).trim();
   POLICIES_SNIPPET = readIfExists(path.join(cfgDir, "policies.txt")).trim();
@@ -84,13 +49,6 @@ ${FAQ_SNIPPET}`.trim();
 ${POLICIES_SNIPPET}`.trim();
   }
 
-  // Append style/formatting guidance (formatting only; does not affect data calls)
-  SYS_PROMPT += `
-
-# Output & Tone Guide (format-only)
-${STYLE_GUIDE}
-`;
-
   // Raw data
   PROVIDERS_TXT         = readIfExists(path.join(dataDir, "providers_100.txt"));
   PROVIDER_SCHEDULE_TXT = readIfExists(path.join(dataDir, "provider_schedule_14d.txt"));
@@ -98,9 +56,12 @@ ${STYLE_GUIDE}
   // Parse
   PROVIDERS = parseProviders(PROVIDERS_TXT);
   SLOTS     = parseSchedule(PROVIDER_SCHEDULE_TXT);
+
+  // Index slots
+  indexSlots();
 }
 
-// Robust Parsing (no keyword triggers)
+// -------- Parsing --------
 
 function parseProviders(raw){
   if (!raw || !raw.trim()) return [];
@@ -229,45 +190,20 @@ function parseSchedule(txt){
   return items;
 }
 
-// Slot helpers
-let SLOTS_BY_ID = new Map();
 function indexSlots(){
   SLOTS_BY_ID = new Map();
   for (const s of SLOTS){
     if (!SLOTS_BY_ID.has(s.id)) SLOTS_BY_ID.set(s.id, []);
     SLOTS_BY_ID.get(s.id).push(`${s.date} ${s.time}`);
   }
-  // Ensure each provider's slots already sorted (parseSchedule already sorted globally but group order matters)
-  for (const [id, arr] of SLOTS_BY_ID.entries()){
-    arr.sort((a,b)=> a.localeCompare(b));
-  }
 }
 
-function formatSlot(dtStr){
-  // dtStr: "YYYY-MM-DD HH:MM"
-  const [d, t] = dtStr.split(" ");
-  const [Y, M, D] = d.split("-").map(n=>parseInt(n,10));
-  const [h, m] = t.split(":").map(n=>parseInt(n,10));
-  const js = new Date(Date.UTC(Y, M-1, D, h, m));
-  const weekday = js.toLocaleDateString("en-US", { weekday:"long", timeZone:"UTC" });
-  const date = js.toLocaleDateString("en-US", { timeZone:"UTC" }); // M/D/YYYY
-  const time = js.toLocaleTimeString("en-US", { hour:"numeric", minute:"2-digit", hour12:true, timeZone:"UTC" });
-  // Convert M/D/YYYY -> MM/DD/YYYY
-  const [mm, dd, yyyy] = date.split("/");
-  const mm2 = mm.padStart(2,"0");
-  const dd2 = dd.padStart(2,"0");
-  return `${time}, ${weekday}, ${mm2}/${dd2}/${yyyy}`;
-}
+// -------- Hints & scoring --------
 
-function getNextNSlots(id, n=10){
-  const arr = SLOTS_BY_ID.get(id) || [];
-  return arr.slice(0, n).map(formatSlot);
-}
-
-// Hints extraction (semantic-ish, no rigid keywords)
 function extractHintsFromHistory(history, latestUserMessage){
   const allText = (history.map(h => h.content).join(" ") + " " + (latestUserMessage||"")).toLowerCase();
 
+  // State (two-letter) heuristic
   const STATE_ABBRS = ["al","ak","az","ar","ca","co","ct","de","fl","ga","hi","id","il","in","ia","ks","ky","la","me","md","ma","mi","mn","ms","mo","mt","ne","nv","nh","nj","nm","ny","nc","nd","oh","ok","or","pa","ri","sc","sd","tn","tx","ut","vt","va","wa","wv","wi","wy"];
   let state = "";
   for (const abbr of STATE_ABBRS){
@@ -290,14 +226,17 @@ function extractHintsFromHistory(history, latestUserMessage){
     }
   }
 
+  // Payment vs insurance feel
   const wantsCash = /\bcash\b|\bself[- ]?pay\b|\bout[- ]?of[- ]?pocket\b/.test(allText);
   const planMatch = allText.match(/\b(aetna|bcbs|blue\s?cross|blue\s?shield|cigna|humana|united\s?health|uhc|medicare|medicaid)\b/i);
   const plan = planMatch ? planMatch[1].toLowerCase() : "";
 
+  // Modality preference
   const prefersPsych  = /\bpsych(iatry|iatrist| med(ication)?|med management)\b/.test(allText);
   const prefersTherap = /\btherap(y|ist)\b/.test(allText);
   const prefersBoth   = /both\b|combo|combined/.test(allText);
 
+  // Language/gender cues (soft)
   const wantsFemale = /\bfemale|woman|women|she\/her\b/i.test(allText);
   const wantsMale   = /\bmale|man|men|he\/him\b/i.test(allText);
   const langMatch   = allText.match(/\b(english|spanish|mandarin|hindi|arabic|french|portuguese|german|asl)\b/i);
@@ -306,149 +245,126 @@ function extractHintsFromHistory(history, latestUserMessage){
   return { state, wantsCash, plan, prefersPsych, prefersTherap, prefersBoth, wantsFemale, wantsMale, language };
 }
 
-// Scoring
 function scoreProvider(p, hints){
   let score = 0;
 
+  // State
   if (hints.state && p.licensed_states?.includes(hints.state)) score += HINT_WEIGHT_BONUS;
 
+  // Payment / insurance feel
   const insLow = (p.insurers_raw || p.insurers?.join(",") || "").toLowerCase();
   if (hints.wantsCash && insLow.includes("cash")) score += HINT_WEIGHT_BONUS;
   if (hints.plan && insLow.includes(hints.plan)) score += SECONDARY_WEIGHT_BONUS;
 
+  // Modality
   if (hints.prefersBoth && p.role === "both") score += HINT_WEIGHT_BONUS;
   if (hints.prefersPsych && p.role === "psychiatrist") score += HINT_WEIGHT_BONUS;
   if (hints.prefersTherap && p.role === "therapist") score += HINT_WEIGHT_BONUS;
 
+  // Language
   const langsLow = (p.languages||[]).map(x=>x.toLowerCase());
   if (hints.language && langsLow.includes(hints.language)) score += SECONDARY_WEIGHT_BONUS;
 
+  // Availability boost if any slots exist
   if (SLOTS_BY_ID.has(p.id)) score += SECONDARY_WEIGHT_BONUS;
 
   return score;
 }
 
-// ORDER helpers
-function ensureEnglishFirst(list){
-  if (!Array.isArray(list) || !list.length) return list || [];
-  const englishIndex = list.findIndex(x => /^english$/i.test(x));
-  if (englishIndex <= 0) return list;
-  const copy = list.slice();
-  const [eng] = copy.splice(englishIndex,1);
-  copy.unshift(eng);
-  return copy;
-}
+// -------- Formatting helpers (10-slot cards) --------
 
-function reorderPayments(insurers){
-  const arr = (insurers||[]).slice();
-  if (!arr.length) return arr;
-  let cashIdx = arr.findIndex(x => /cash/i.test(x));
-  if (cashIdx > 0){
-    const [cash] = arr.splice(cashIdx,1);
-    arr.unshift(cash);
-  }
-  return arr;
-}
-
-function extractCredentials(name){
-  // "Aiden Johnson (LMFT)" -> "LMFT"
-  const m = (name||"").match(/\(([^)]+)\)/);
-  return m ? m[1].trim() : "";
-}
-
-function roleToCareType(role){
-  if (role === "therapist") return "Therapy";
+function toTitleCaseRole(role){
+  if (!role) return "Provider";
   if (role === "psychiatrist") return "Psychiatry";
+  if (role === "therapist") return "Therapy";
   if (role === "both") return "Both";
   return "Provider";
 }
 
-// Provider card (multiline) WITH 10 slots
-function providerCard(p){
-  const creds = extractCredentials(p.name);
-  const careType = roleToCareType(p.role);
-  const statesLine = p.licensed_states?.length ? p.licensed_states.join(", ") : "Not specified";
-  const payments = reorderPayments(p.insurers?.length ? p.insurers : (p.insurers_raw ? p.insurers_raw.split(/[,;]+/).map(s=>s.trim()).filter(Boolean) : []));
-  const payLine = payments.length ? payments.join(", ") : "Not specified";
-  const langs = ensureEnglishFirst(p.languages||[]);
-  const langLine = langs.length ? langs.join(", ") : "English";
+function formatDateParts(yyyyMmDd){
+  // yyyy-mm-dd -> { dowName, mmddyyyy: "10/03/2025" }
+  const [y, m, d] = yyyyMmDd.split("-").map(n => parseInt(n, 10));
+  // Construct a Date in UTC to avoid TZ surprises
+  const date = new Date(Date.UTC(y, m-1, d));
+  const DOW = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+  const dowName = DOW[date.getUTCDay()];
+  const mm = String(m).padStart(2,"0");
+  const dd = String(d).padStart(2,"0");
+  return { dowName, mmddyyyy: `${mm}/${dd}/${y}` };
+}
+
+function formatTime(hhmm){
+  // "09:00" -> "9:00 AM"
+  let [h, m] = hhmm.split(":").map(n => parseInt(n, 10));
+  const ampm = h >= 12 ? "PM" : "AM";
+  h = h % 12; if (h === 0) h = 12;
+  return `${h}:${String(m).padStart(2,"0")} ${ampm}`;
+}
+
+function providerCardWithSlots(p){
+  // Base fields
+  const careType = toTitleCaseRole(p.role);
+  const states = (p.licensed_states || []).join(", ");
+  const payment = p.insurers?.length ? p.insurers.join(", ") : (p.insurers_raw || "Cash pay");
+  const languages = (p.languages || []).join(", ");
   const lived = p.lived_experience ? p.lived_experience : "Not specified";
 
-  const slots = getNextNSlots(p.id, 10);
-  const slotsLines = slots.length
-    ? ["Soonest Appointment Slots:", ...slots.map(s => `[_] ${s}`)]
-    : ["Soonest Appointment Slots:", "[_] No upcoming availability listed"];
+  // Up to 10 soonest slots for this provider
+  const slots = SLOTS_BY_ID.get(p.id) || [];
+  const top10 = slots.slice(0, 10);
+  const slotLines = top10.map(dt => {
+    const [date, time] = dt.split(" ");
+    const { dowName, mmddyyyy } = formatDateParts(date);
+    const time12 = formatTime(time);
+    return `[_] ${time12}, ${dowName}, ${mmddyyyy}`;
+  });
 
+  // Build the multi-line card
+  // (Each field on its own line; slots each on their own line after a header)
   const lines = [
     `Name: ${p.name}`,
-    `Care Type: ${careType}${creds ? ` (title [${creds}])` : ""}`,
+    `Care Type: ${careType}`,
     `Personal Experiences: ${lived}`,
-    `States: ${statesLine}`,
-    `Payment Types: ${payLine}`,
-    `Languages: ${langLine}`,
-    ...slotsLines
+    `States: ${states || "Not specified"}`,
+    `Payment Types: ${payment}`,
+    `Languages: ${languages || "Not specified"}`,
+    `Soonest Appointment Slots:`,
+    ...(slotLines.length ? slotLines : ["(No upcoming availability listed)"])
   ];
 
   return lines.join("\n");
 }
 
-function scheduleIndexLinesFor(ids){
-  // Build compact index only for chosen provider ids (hidden context for the model)
-  const lines = [];
-  let usedChars = 0;
-  let usedRows = 0;
-
-  for (const id of ids){
-    const arr = SLOTS_BY_ID.get(id);
-    if (!arr || !arr.length) continue;
-    const line = `${id}: ${arr.join(", ")}`;
-    const nextChars = usedChars + line.length + 1;
-    if (nextChars > SCHEDULE_CONTEXT_CHAR_BUDGET || usedRows >= SCHEDULE_LINES_HARD_CAP) break;
-    lines.push(line);
-    usedChars = nextChars;
-    usedRows++;
-  }
-  return lines;
-}
+// -------- Context builder (cards with 10 slots each) --------
 
 function buildDatasetContextFiltered(hints){
-  // Score & select
+  // Score & order
   const scored = PROVIDERS.map(p => ({ p, s: scoreProvider(p, hints) }));
   scored.sort((a,b) => b.s - a.s);
-
   const ordered = scored.map(x => x.p);
 
   const cards = [];
-  const selectedIds = [];
   let used = 0;
 
   for (const p of ordered){
-    const card = providerCard(p);               // MULTILINE card with 10 slots
-    const next = used + card.length + 2;        // +2 for a blank line buffer
+    const card = providerCardWithSlots(p);
+    const next = used + card.length + 2; // +2 for spacing/newlines
     if (next > PROVIDER_CONTEXT_CHAR_BUDGET || cards.length >= PROVIDER_HARD_CAP) break;
     cards.push(card);
-    selectedIds.push(p.id);
     used = next;
   }
 
-  // Build availability (hidden) only for selected providers
-  const chosenIdSet = new Set(selectedIds);
-  const schedLines = scheduleIndexLinesFor(chosenIdSet);
-
   const visibleDirectory = `
 # Provider Directory (use ONLY entries here; do not invent)
-# Each provider is a multi-line card.
+# Cards include up to 10 soonest appointment slots per provider.
 ${cards.join("\n\n")}`.trim();
 
-  const hiddenSchedule = schedLines.length ? `
-# Availability Index (for your internal reasoning; DO NOT quote verbatim)
-# Format: provider_id: YYYY-MM-DD HH:MM, YYYY-MM-DD HH:MM, ...
-${schedLines.join("\n")}`.trim() : "";
-
-  return `${visibleDirectory}\n\n${hiddenSchedule}`.trim();
+  // We no longer add a separate hidden schedule block since cards include 10 slots inline
+  return visibleDirectory;
 }
 
-// Azure OpenAI call
+// -------- Azure OpenAI --------
+
 async function callAOAI(url, messages, temperature, maxTokens, apiKey){
   const resp = await fetch(url, {
     method:"POST",
@@ -464,11 +380,11 @@ async function callAOAI(url, messages, temperature, maxTokens, apiKey){
   return { resp, data };
 }
 
-// Main HTTP handler
+// -------- Main HTTP handler --------
+
 module.exports = async function (context, req){
   try{
     initConfig();
-    indexSlots();
 
     const userMessage = norm(req.body?.message);
     if (!userMessage){
@@ -496,7 +412,7 @@ module.exports = async function (context, req){
 
     const url = `${endpoint.replace(/\/+$/,"")}/openai/deployments/${deployment}/chat/completions?api-version=${apiVersion}`;
 
-    // Build filtered dataset context
+    // Build filtered dataset context (with 10-slot cards)
     const hints = extractHintsFromHistory(normalizedHistory, userMessage);
     const directoryContext = buildDatasetContextFiltered(hints);
 
@@ -536,18 +452,16 @@ module.exports = async function (context, req){
     // Debug payload
     if (req.query?.debug === "1"){
       const dataDir = path.join(__dirname, "../_data");
-      const provPath = path.join(dataDir, "providers_100.txt");
-      const slotPath = path.join(dataDir, "provider_schedule_14d.txt");
 
+      // tiny preview for sanity (first few provider basics as parsed)
       const directoryPreview = PROVIDERS.slice(0, MAX_PROVIDERS_LINES_DEBUG_PREVIEW).map(p =>
         [p.id, p.name, p.role, (p.licensed_states||[]).join(","), (p.insurers||[]).join(","), (p.languages||[]).join(","), p.email].join(" | ")
       );
 
-      // Provide a short preview of the built (multiline) directory: just the first card header lines
-      const firstCardHeaders = directoryContext
-        .split("\n")
-        .filter(l => l.startsWith("Name:"))
-        .slice(0, MAX_PROVIDERS_LINES_DEBUG_PREVIEW);
+      // small sample of the card context
+      const filteredFirstLines = directoryContext
+        .split("\n\n")
+        .slice(0, 2); // first couple of cards
 
       context.res = {
         status:200,
@@ -565,12 +479,8 @@ module.exports = async function (context, req){
             provider_schedule_txt: !!PROVIDER_SCHEDULE_TXT
           },
           provider_counts: { providers: PROVIDERS.length, slots: SLOTS.length },
-          provider_paths: {
-            provPath, provExists: fs.existsSync(provPath),
-            slotPath, slotExists: fs.existsSync(slotPath)
-          },
           directory_preview: directoryPreview,
-          filtered_preview: firstCardHeaders,
+          filtered_preview: filteredFirstLines,
           history_len: normalizedHistory.length,
           hints
         }
@@ -582,6 +492,7 @@ module.exports = async function (context, req){
     context.res = { status:200, headers:{ "Content-Type":"application/json" }, body:{ reply } };
 
   } catch(e){
+    // JSON-only error (no HTML/hex)
     context.res = { status:500, headers:{ "Content-Type":"application/json" }, body:{ error:"server error", detail:String(e) } };
   }
 };
