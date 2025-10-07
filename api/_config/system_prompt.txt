@@ -91,7 +91,7 @@ PROVIDER MATCHING
 Only suggest providers from the directory in context. Never invent.
 Match state and insurance/cash pay.
 Respect preferences (gender, style, language, lived experience).
-Show 2–3 provider options max.
+Show 2–3 providers max.
 For each provider, show:
 Name, Credentials, Role (Therapy / Psychiatry / Both)
 Styles / lived experience / languages (if in directory)
@@ -110,6 +110,7 @@ AVAILABILITY RULES
 PROVIDER SELECTION & RANDOMIZATION
 If multiple fit, rotate results so users don’t always see the same names first.
 Do not repeat the same provider in one reply.
+
 TIME FORMAT
 Always show schedule slots in 12-hour format with AM/PM.
 Always include the timezone (Arizona time).
