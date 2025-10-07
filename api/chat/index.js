@@ -9,12 +9,12 @@ const DEFAULT_MAX_COMPLETION_TOKENS = 2048; // floor; client can request more
 const MAX_PROVIDERS_LINES_DEBUG_PREVIEW = 5; // only for ?debug=1 payload brevity
 
 // Filtering / context sizing
-const PROVIDER_CONTEXT_CHAR_BUDGET = 12000; // ~12k chars for providers
-const SCHEDULE_CONTEXT_CHAR_BUDGET = 6000;  // ~6k chars for schedule
-const PROVIDER_HARD_CAP = 300;              // absolute max lines emitted
-const SCHEDULE_LINES_HARD_CAP = 600;        // absolute max schedule rows
-const HINT_WEIGHT_BONUS = 4;                // score bonus for matches
-const SECONDARY_WEIGHT_BONUS = 2;           // softer match bonus
+const PROVIDER_CONTEXT_CHAR_BUDGET = 12000;      // ~12k chars for providers
+const SCHEDULE_CONTEXT_CHAR_BUDGET = 6000;       // ~6k chars for schedule
+const PROVIDER_HARD_CAP = 300;                   // absolute max lines emitted
+const SCHEDULE_LINES_HARD_CAP = 600;             // absolute max schedule rows
+const HINT_WEIGHT_BONUS = 4;                     // score bonus for matches
+const SECONDARY_WEIGHT_BONUS = 2;                // softer match bonus
 
 // Lazy-loaded globals
 let SYS_PROMPT = "", FAQ_SNIPPET = "", POLICIES_SNIPPET = "";
@@ -26,7 +26,6 @@ let SLOTS = [];     // structured slots
 function readIfExists(p){ try{ return fs.readFileSync(p, "utf8"); } catch { return ""; } }
 const norm = s => (s||"").toString().trim();
 
-// ------------------------ Init ------------------------
 function initConfig(){
   if (SYS_PROMPT) return; // cold-start only
 
@@ -60,7 +59,8 @@ ${POLICIES_SNIPPET}`.trim();
   SLOTS     = parseSchedule(PROVIDER_SCHEDULE_TXT);
 }
 
-// ------------------------ Parsing ------------------------
+// -------- Robust Parsing (no keyword triggers)
+
 function parseProviders(raw){
   if (!raw || !raw.trim()) return [];
 
@@ -78,7 +78,7 @@ function parseProviders(raw){
   // Build blocks by header lines that start with prov_###
   for (const lineRaw of lines){
     const line = (lineRaw || "").trim();
-    if (!line) {
+    if (!line) { 
       cur.push("");
       continue;
     }
@@ -92,6 +92,7 @@ function parseProviders(raw){
   if (cur.length) blocks.push(cur);
 
   const out = [];
+
   for (const arr of blocks){
     if (!arr.length) continue;
 
@@ -185,7 +186,7 @@ function parseSchedule(txt){
   return items;
 }
 
-// ------------------------ Hints (for filtering) ------------------------
+// -------- Hints extraction
 function extractHintsFromHistory(history, latestUserMessage){
   const allText = (history.map(h => h.content).join(" ") + " " + (latestUserMessage||"")).toLowerCase();
 
@@ -222,14 +223,17 @@ function extractHintsFromHistory(history, latestUserMessage){
   const prefersTherap = /\btherap(y|ist)\b/.test(allText);
   const prefersBoth   = /both\b|combo|combined/.test(allText);
 
-  // Language cues (soft)
+  // Language/gender cues (soft)
+  const wantsFemale = /\bfemale|woman|women|she\/her\b/i.test(allText);
+  const wantsMale   = /\bmale|man|men|he\/him\b/i.test(allText);
   const langMatch   = allText.match(/\b(english|spanish|mandarin|hindi|arabic|french|portuguese|german|asl)\b/i);
   const language    = (langMatch?.[1] || "").toLowerCase() || "english";
 
-  return { state, wantsCash, plan, prefersPsych, prefersTherap, prefersBoth, language };
+  return { state, wantsCash, plan, prefersPsych, prefersTherap, prefersBoth, wantsFemale, wantsMale, language };
 }
 
-// ------------------------ Scoring & context ------------------------
+// -------- Filtering & context building (internal directory for the model)
+
 function scoreProvider(p, hints){
   let score = 0;
 
@@ -323,7 +327,7 @@ ${schedLines.join("\n")}`.trim() : "";
   return `${visibleDirectory}\n\n${hiddenSchedule}`.trim();
 }
 
-// ------------------------ Slots index ------------------------
+// -------- Slot indexing
 let SLOTS_BY_ID = new Map();
 function indexSlots(){
   SLOTS_BY_ID = new Map();
@@ -333,7 +337,7 @@ function indexSlots(){
   }
 }
 
-// ------------------------ AOAI ------------------------
+// -------- Azure OpenAI call
 async function callAOAI(url, messages, temperature, maxTokens, apiKey){
   const resp = await fetch(url, {
     method:"POST",
@@ -350,65 +354,8 @@ async function callAOAI(url, messages, temperature, maxTokens, apiKey){
 }
 
 // ======================================================================
-// Provider name matching & slots hard-branch utilities
+// HARD-CODED CARD RENDERER (10 slots, display only; used in debug preview)
 // ======================================================================
-function providersMentionedByUser(text){
-  const q = (text || "").toLowerCase().replace(/[^a-z0-9\s]/g, " ").replace(/\s+/g, " ").trim();
-  if (!q) return [];
-
-  const scored = [];
-  for (const p of PROVIDERS){
-    const name = (p.name || "").toLowerCase();
-    const nameNoCred = name.replace(/\s*\([^)]+\)\s*$/, "").trim(); // strip (LMFT) etc.
-    const nameTokens = nameNoCred.split(/\s+/).filter(Boolean);
-
-    let score = 0;
-
-    // exact full name match
-    if (q === nameNoCred) score += 100;
-
-    // contains full name as a substring
-    if (q.includes(nameNoCred)) score += 50;
-
-    // first+last token match
-    if (nameTokens.length >= 2) {
-      const firstLast = `${nameTokens[0]} ${nameTokens[nameTokens.length - 1]}`;
-      if (q === firstLast) score += 80;
-      if (q.includes(firstLast)) score += 40;
-    }
-
-    // token overlap
-    const qTokens = q.split(" ").filter(Boolean);
-    const overlap = qTokens.filter(t => nameNoCred.includes(t)).length;
-    if (overlap) score += overlap * 5;
-
-    // slight boost if last name appears verbatim
-    if (nameTokens.length) {
-      const last = nameTokens[nameTokens.length - 1];
-      if (qTokens.includes(last)) score += 10;
-    }
-
-    if (score > 0) scored.push({ p, score });
-  }
-
-  scored.sort((a,b) => b.score - a.score);
-  return scored.map(x => x.p);
-}
-
-function mostRecentProviderFromHistory(history){
-  for (let i = history.length - 1; i >= 0; i--){
-    if (history[i]?.role !== "user") continue;
-    const txt = (history[i].content || "");
-    const matches = providersMentionedByUser(txt);
-    if (matches.length) return matches[0];
-  }
-  return null;
-}
-
-function looksLikeSlotsRequest(text){
-  const t = (text || "").toLowerCase();
-  return /\b(slot|availability|available|openings?|times?|schedule)\b/.test(t);
-}
 
 function extractCredentialFromName(name) {
   const m = (name || "").match(/\(([A-Za-z0-9 ,.+-]+)\)\s*$/);
@@ -437,10 +384,10 @@ function formatTime(hhmm){
   return `${h}:${String(m).padStart(2,"0")} ${ampm}`;
 }
 function providerCardWithSlots(p, count = 10){
-  const cred = extractCredentialFromName(p.name);
+  const cred = extractCredentialFromName(p.name); // e.g. "LPC"
   const nameNoCred = (p.name || "").replace(/\s*\([^)]+\)\s*$/, "").trim();
 
-  const careType = careTypeLabel(p.role);
+  const careType = careTypeLabel(p.role); // "therapy" | "psychiatry" | "both" | "provider"
   const states = (p.licensed_states || []).join(", ");
   const payment = p.insurers?.length ? p.insurers.join(", ") : (p.insurers_raw || "Cash");
   const languages = (p.languages || []).join(", ");
@@ -469,7 +416,98 @@ function providerCardWithSlots(p, count = 10){
   return lines.join("\n");
 }
 
-// ------------------------ Main HTTP handler ------------------------
+// ======================================================================
+// Moderation & Routing (general-purpose)
+// ======================================================================
+
+const SAFETY = {
+  categories: {
+    self_harm_imminent:       { action: "block_reply" },
+    self_harm_non_imminent:   { action: "transform"   },
+    sexual_assault_disclosure:{ action: "transform"   },
+    graphic_sexual_content:   { action: "block_reply" },
+    violence_imminent:        { action: "block_reply" },
+    hate_harassment:          { action: "transform"   },
+    minors_sexual:            { action: "block_reply" },
+  },
+  detectors: {
+    self_harm_imminent: /\b(kill myself|suicide now|end my life|overdose tonight|I’m going to (kill|hurt) myself)\b/i,
+    self_harm_non_imminent: /\b(suicidal|self[-\s]?harm|cutting|want to die|don’t want to live)\b/i,
+    sexual_assault_disclosure: /\b(rap(e|ed)|sexual(ly)?\s+assault(ed)?|sex\s*assault|molest(ed|ation)|sexual\s+violence)\b/i,
+    graphic_sexual_content: /\b(incest|bestiality|child\s*sex|cp\b|rape\s*fantasy)\b/i,
+    violence_imminent: /\b(kill (him|her|them)|shoot (him|her|them)|attack (him|her|them) now|i’m going to (kill|shoot|stab))\b/i,
+    hate_harassment: /\b(you (are|’re) (worthless|stupid)|go (kill|hurt) yourself|slur)\b/i,
+    minors_sexual: /\b(minor\s+sex|under\s*age\s+sex|teen porn|child porn)\b/i,
+  },
+  redactions: [
+    { pattern: /\brap(e|ed)\b/gi,           replace: "sexual assault" },
+    { pattern: /\bmolest(ed|ation)\b/gi,    replace: "sexual assault" },
+    { pattern: /\bkill myself\b/gi,         replace: "harm myself" },
+    { pattern: /\bsuicide\b/gi,             replace: "self-harm" },
+    { pattern: /\b(overdose)\b/gi,          replace: "harm" },
+  ],
+};
+
+function detectCategories(text="") {
+  const hits = [];
+  for (const [cat, rx] of Object.entries(SAFETY.detectors)) {
+    if (rx.test(text)) hits.push(cat);
+  }
+  return hits;
+}
+
+function redactForLLM(text="") {
+  let out = text;
+  for (const r of SAFETY.redactions) {
+    out = out.replace(r.pattern, r.replace);
+  }
+  return out;
+}
+
+function crisisFooter() {
+  return "\n\nIf you’re in immediate danger or might act on these thoughts: in the U.S., call or text **988** for 24/7 support.";
+}
+
+function cannedResponse(category) {
+  switch (category) {
+    case "self_harm_imminent":
+      return "I’m really glad you reached out. Your safety matters. I’m not equipped for emergencies. If you’re in immediate danger or might act on these thoughts, call or text **988** right now for 24/7 support.";
+    case "violence_imminent":
+      return "I can’t help with plans to hurt someone. If you feel in danger, please contact local authorities or call **911**. I can help talk through what you’re dealing with and connect you to care.";
+    case "graphic_sexual_content":
+    case "minors_sexual":
+      return "I can’t help with that. If you have questions about mental health or want support, I can help connect you with care options.";
+    default:
+      return "I can’t help with that request. If you’re looking for mental health support, I can help match you with a provider.";
+  }
+}
+
+/**
+ * Decide how to handle this turn to avoid moderation failures.
+ * Returns: { action: "block_reply"|"transform"|"passthrough", reply?, transformedMessage?, extraFooter? }
+ */
+function moderateAndRoute(userMessage, historyText="") {
+  const text = `${historyText} ${userMessage || ""}`.trim();
+  const cats = detectCategories(text);
+
+  if (cats.length === 0) {
+    return { action: "passthrough" };
+  }
+
+  const hardBlocks = ["self_harm_imminent", "violence_imminent", "graphic_sexual_content", "minors_sexual"];
+  const hardHit = cats.find(c => hardBlocks.includes(c));
+  if (hardHit) {
+    return { action: "block_reply", reply: cannedResponse(hardHit) };
+  }
+
+  const transformed = redactForLLM(userMessage);
+  const addFooter = cats.includes("self_harm_non_imminent") || cats.includes("sexual_assault_disclosure");
+  return { action: "transform", transformedMessage: transformed, extraFooter: addFooter ? crisisFooter() : "" };
+}
+
+// ======================================================================
+// Main HTTP handler
+// ======================================================================
 module.exports = async function (context, req){
   try{
     initConfig();
@@ -481,12 +519,30 @@ module.exports = async function (context, req){
       return;
     }
 
-    // Keep only last N turns and trim content
+    // Keep only last N turns and trim content (UI already limits)
     const history = Array.isArray(req.body?.history) ? req.body.history : [];
     const normalizedHistory = history
       .slice(-MAX_HISTORY_TURNS)
       .map(m => ({ role: m?.role === "assistant" ? "assistant" : "user", content: norm(m?.content) }))
       .filter(m => m.content);
+
+    // Build detection context
+    const historyTextForDetection = normalizedHistory.map(h => h.content).join(" ");
+
+    // Moderation & routing
+    const route = moderateAndRoute(userMessage, historyTextForDetection);
+    if (route.action === "block_reply") {
+      context.res = {
+        status: 200,
+        headers:{ "Content-Type":"application/json" },
+        body: { reply: route.reply }
+      };
+      return;
+    }
+    let userMessageForModel = userMessage;
+    if (route.action === "transform" && route.transformedMessage) {
+      userMessageForModel = route.transformedMessage;
+    }
 
     // AOAI env
     const apiVersion = norm(process.env.AZURE_OPENAI_API_VERSION || "2024-08-01-preview");
@@ -501,45 +557,8 @@ module.exports = async function (context, req){
 
     const url = `${endpoint.replace(/\/+$/,"")}/openai/deployments/${deployment}/chat/completions?api-version=${apiVersion}`;
 
-    // ----- HARD BRANCH: explicit/implicit slot requests -----
-    if (looksLikeSlotsRequest(userMessage)) {
-      let picked = null;
-
-      // 1) try latest message
-      const mentionedNow = providersMentionedByUser(userMessage);
-      if (mentionedNow.length) {
-        picked = mentionedNow[0];
-      } else {
-        // 2) fallback to most recent provider mentioned in prior user turns
-        picked = mostRecentProviderFromHistory(normalizedHistory);
-      }
-
-      if (picked) {
-        const reply = providerCardWithSlots(picked, 10);
-
-        if (req.query?.debug === "1"){
-          context.res = {
-            status:200,
-            headers:{ "Content-Type":"application/json" },
-            body:{
-              reply,
-              debug_reason: "hard-branch slots response",
-              provider_id: picked.id,
-              provider_name: picked.name,
-              total_slots_for_provider: (SLOTS_BY_ID.get(picked.id) || []).length
-            }
-          };
-          return;
-        }
-
-        context.res = { status:200, headers:{ "Content-Type":"application/json" }, body:{ reply } };
-        return;
-      }
-      // If no provider identified, fall through to LLM
-    }
-
     // Build filtered dataset context
-    const hints = extractHintsFromHistory(normalizedHistory, userMessage);
+    const hints = extractHintsFromHistory(normalizedHistory, userMessageForModel);
     const directoryContext = buildDatasetContextFiltered(hints);
 
     // Compose messages
@@ -550,7 +569,7 @@ module.exports = async function (context, req){
     const messages = [
       { role:"system", content: systemContent },
       ...normalizedHistory,
-      { role:"user", content: userMessage }
+      { role:"user", content: userMessageForModel }
     ];
 
     // Token budget
@@ -575,22 +594,30 @@ module.exports = async function (context, req){
       reply = reply ? (reply + " …") : "(I hit a token limit — continue?)";
     }
 
+    // Append footer if we transformed for sensitive content
+    if (route.action === "transform" && route.extraFooter) {
+      reply = reply ? (reply + route.extraFooter) : route.extraFooter;
+    }
+
     // Debug payload
     if (req.query?.debug === "1"){
+      // tiny preview for sanity (first few provider lines as parsed)
       const directoryPreview = PROVIDERS.slice(0, MAX_PROVIDERS_LINES_DEBUG_PREVIEW).map(p =>
         [p.id, p.name, p.role, (p.licensed_states||[]).join(","), (p.insurers||[]).join(","), (p.languages||[]).join(","), p.email].join(" | ")
       );
 
+      // show some filtered sample too
       const filteredFirstLines = directoryContext
         .split("\n")
         .filter(l => l.startsWith("prov_"))
         .slice(0, MAX_PROVIDERS_LINES_DEBUG_PREVIEW);
 
+      // Also include a "cards_preview" (hard-coded formatting) for the first 1–3 top-scored providers
       const topForCards = PROVIDERS
         .map(p => ({ p, s: scoreProvider(p, hints) }))
         .sort((a,b) => b.s - a.s)
         .slice(0, 3)
-        .map(x => providerCardWithSlots(x.p));
+        .map(x => providerCardWithSlots(x.p, 10));
 
       context.res = {
         status:200,
@@ -610,7 +637,7 @@ module.exports = async function (context, req){
           provider_counts: { providers: PROVIDERS.length, slots: SLOTS.length },
           directory_preview: directoryPreview,
           filtered_preview: filteredFirstLines,
-          cards_preview: topForCards,
+          cards_preview: topForCards, // 10-slot cards preview
           history_len: normalizedHistory.length,
           hints
         }
