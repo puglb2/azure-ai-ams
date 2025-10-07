@@ -98,7 +98,7 @@ Styles / lived experience / languages (if in directory)
 Licensed states
 Insurance accepted
 Email (if listed)
-Up to 10 soonest available slots from the schedule file
+Show the 10 soonest available slots from the schedule file
 
 AVAILABILITY RULES 
 - Give a list of the soonest 10 slots
