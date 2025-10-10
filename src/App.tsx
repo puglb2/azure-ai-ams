@@ -139,7 +139,7 @@ export default function App() {
     fontFamily: 'system-ui, -apple-system, Segoe UI, Roboto, sans-serif',
     minHeight: '100vh',
     background: 'linear-gradient(180deg, #e5e7eb 0%, #f8fafc 100%)',
-    paddingTop: 10, // moves card up toward the top
+    paddingTop: 20, // moves card up toward the top
     display: 'flex',
     justifyContent: 'center',
   }}
@@ -148,7 +148,7 @@ export default function App() {
     style={{
       maxWidth: 760,
       width: '100%',
-      height: '88vh', // keeps it from overflowing vertically
+      height: '60vh', // keeps it from overflowing vertically
       display: 'flex',
       flexDirection: 'column',
       background: '#ffffff',
