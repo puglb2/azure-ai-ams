@@ -146,7 +146,7 @@ export default function App() {
 >
   <div
     style={{
-      maxWidth: 960,
+      maxWidth: 860,
       width: '100%',
       height: '70vh', // keeps it from overflowing vertically
       display: 'flex',
