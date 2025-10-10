@@ -9,7 +9,7 @@ function Header() {
     <div style={{ padding: 16, display: 'flex', alignItems: 'center', gap: 12 }}>
       <div
         style={{
-          width: 36, height: 5, borderRadius: 8,
+          width: 36, height: 36, borderRadius: 8,
           background: '#111', color: '#fff',
           display: 'grid', placeItems: 'center', fontWeight: 700
         }}
