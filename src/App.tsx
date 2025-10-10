@@ -135,16 +135,15 @@ export default function App() {
 
   return (
     <div
-      style={{
-        fontFamily: 'system-ui, -apple-system, Segoe UI, Roboto, sans-serif',
-        minHeight: '100vh',
-        background: 'linear-gradient(180deg, #e5e7eb 0%, #f8fafc 100%)',
-        padding: 24,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center'
-      }}
-    >
+  style={{
+    fontFamily: 'system-ui, -apple-system, Segoe UI, Roboto, sans-serif',
+    minHeight: '100vh',
+    background: 'linear-gradient(180deg, #e5e7eb 0%, #f8fafc 100%)',
+    padding: '48px 0',
+    display: 'flex',
+    justifyContent: 'center'
+  }}
+>
       <div
         style={{
           maxWidth: 760,
