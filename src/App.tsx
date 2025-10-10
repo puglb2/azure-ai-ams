@@ -139,24 +139,25 @@ export default function App() {
     fontFamily: 'system-ui, -apple-system, Segoe UI, Roboto, sans-serif',
     minHeight: '100vh',
     background: 'linear-gradient(180deg, #e5e7eb 0%, #f8fafc 100%)',
-    padding: '48px 0',
+    paddingTop: 32, // moves card up toward the top
     display: 'flex',
-    justifyContent: 'center'
+    justifyContent: 'center',
   }}
 >
-      <div
-        style={{
-          maxWidth: 760,
-          width: '100%',
-          background: '#ffffff',
-          border: '1px solid #d1d5db',
-          borderRadius: 20,
-          overflow: 'hidden',
-          boxShadow: '0 12px 28px rgba(0,0,0,0.1)',
-          display: 'flex',
-          flexDirection: 'column'
-        }}
-      >
+  <div
+    style={{
+      maxWidth: 760,
+      width: '100%',
+      height: '88vh', // keeps it from overflowing vertically
+      display: 'flex',
+      flexDirection: 'column',
+      background: '#ffffff',
+      border: '1px solid #d1d5db',
+      borderRadius: 20,
+      overflow: 'hidden',
+      boxShadow: '0 12px 28px rgba(0,0,0,0.1)',
+    }}
+  >
         <Header />
 
         {/* Safety banner */}
