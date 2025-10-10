@@ -59,7 +59,7 @@ ${POLICIES_SNIPPET}`.trim();
   SLOTS     = parseSchedule(PROVIDER_SCHEDULE_TXT);
 }
 
-// -------- Robust Parsing (no keyword triggers)
+// Robust Parsing (no keyword triggers)
 
 function parseProviders(raw){
   if (!raw || !raw.trim()) return [];
@@ -186,7 +186,7 @@ function parseSchedule(txt){
   return items;
 }
 
-// -------- Hints extraction
+// Hints extraction
 function extractHintsFromHistory(history, latestUserMessage){
   const allText = (history.map(h => h.content).join(" ") + " " + (latestUserMessage||"")).toLowerCase();
 
@@ -232,7 +232,7 @@ function extractHintsFromHistory(history, latestUserMessage){
   return { state, wantsCash, plan, prefersPsych, prefersTherap, prefersBoth, wantsFemale, wantsMale, language };
 }
 
-// -------- Filtering & context building (internal directory for the model)
+// Filtering & context building (internal directory for the model)
 
 function scoreProvider(p, hints){
   let score = 0;
@@ -327,7 +327,7 @@ ${schedLines.join("\n")}`.trim() : "";
   return `${visibleDirectory}\n\n${hiddenSchedule}`.trim();
 }
 
-// -------- Slot indexing
+// Slot indexing
 let SLOTS_BY_ID = new Map();
 function indexSlots(){
   SLOTS_BY_ID = new Map();
@@ -337,7 +337,7 @@ function indexSlots(){
   }
 }
 
-// -------- Azure OpenAI call
+// Azure OpenAI call
 async function callAOAI(url, messages, temperature, maxTokens, apiKey){
   const resp = await fetch(url, {
     method:"POST",
@@ -353,10 +353,7 @@ async function callAOAI(url, messages, temperature, maxTokens, apiKey){
   return { resp, data };
 }
 
-// ======================================================================
 // HARD-CODED CARD RENDERER (10 slots, display only; used in debug preview)
-// ======================================================================
-
 function extractCredentialFromName(name) {
   const m = (name || "").match(/\(([A-Za-z0-9 ,.+-]+)\)\s*$/);
   return m ? m[1].trim() : "";
@@ -416,10 +413,7 @@ function providerCardWithSlots(p, count = 10){
   return lines.join("\n");
 }
 
-// ======================================================================
 // Moderation & Routing (general-purpose)
-// ======================================================================
-
 const SAFETY = {
   categories: {
     self_harm_imminent:       { action: "block_reply" },
@@ -505,9 +499,7 @@ function moderateAndRoute(userMessage, historyText="") {
   return { action: "transform", transformedMessage: transformed, extraFooter: addFooter ? crisisFooter() : "" };
 }
 
-// ======================================================================
 // Main HTTP handler
-// ======================================================================
 module.exports = async function (context, req){
   try{
     initConfig();
