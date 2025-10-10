@@ -78,6 +78,18 @@ export default function App() {
     if (!busy) inputRef.current?.focus()
   }, [busy])
 
+  // ❗ Lock the page/body scroll; only chat area will scroll
+  useEffect(() => {
+    const prevOverflow = document.body.style.overflow
+    const prevOB = (document.body.style as any).overscrollBehavior
+    document.body.style.overflow = 'hidden'
+    ;(document.body.style as any).overscrollBehavior = 'contain'
+    return () => {
+      document.body.style.overflow = prevOverflow
+      ;(document.body.style as any).overscrollBehavior = prevOB || ''
+    }
+  }, [])
+
   // one-time welcome (guard strict-mode double calls)
   useEffect(() => {
     if (didInit.current) return
@@ -101,7 +113,6 @@ export default function App() {
     try {
       // only last 34 turns
       const history = messages.slice(-34).map(m => ({ role: m.role, content: m.content }))
-
       const res = await fetch('/api/chat?ui=1&debug=1', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -135,29 +146,30 @@ export default function App() {
 
   return (
     <div
-  style={{
-    fontFamily: 'system-ui, -apple-system, Segoe UI, Roboto, sans-serif',
-    minHeight: '100vh',
-    background: 'linear-gradient(180deg, #e5e7eb 0%, #f8fafc 100%)',
-    paddingTop: 20, // moves card up toward the top
-    display: 'flex',
-    justifyContent: 'center',
-  }}
->
-  <div
-    style={{
-      maxWidth: 860,
-      width: '100%',
-      height: '70vh', // keeps it from overflowing vertically
-      display: 'flex',
-      flexDirection: 'column',
-      background: '#ffffff',
-      border: '1px solid #d1d5db',
-      borderRadius: 20,
-      overflow: 'hidden',
-      boxShadow: '0 12px 28px rgba(0,0,0,0.1)',
-    }}
-  >
+      style={{
+        fontFamily: 'system-ui, -apple-system, Segoe UI, Roboto, sans-serif',
+        height: '100vh',           // fill viewport
+        overflow: 'hidden',        // 🚫 page scroll
+        background: 'linear-gradient(180deg, #e5e7eb 0%, #f8fafc 100%)',
+        paddingTop: 20,
+        display: 'flex',
+        justifyContent: 'center'
+      }}
+    >
+      <div
+        style={{
+          maxWidth: 860,
+          width: '100%',
+          height: '70vh',          // chat card height
+          display: 'flex',
+          flexDirection: 'column',
+          background: '#ffffff',
+          border: '1px solid #d1d5db',
+          borderRadius: 20,
+          overflow: 'hidden',
+          boxShadow: '0 12px 28px rgba(0,0,0,0.1)'
+        }}
+      >
         <Header />
 
         {/* Safety banner */}
@@ -171,17 +183,18 @@ export default function App() {
             borderBottom: '1px solid #f5d0a9'
           }}
         >
-          <strong>Not for emergencies.</strong> If you’re in immediate danger, call <strong>988</strong> for suicide hotline, or <strong>911</strong> for any other emergencies.
+          <strong>Not for emergencies.</strong> If you’re in immediate danger, call <strong>988</strong>{' '}
+          for suicide hotline, or <strong>911</strong> for any other emergencies.
         </div>
 
-        {/* Chat area */}
+        {/* Chat area (this is the ONLY scroller) */}
         <div
           ref={scrollerRef}
           style={{
             flex: 1,
             padding: 20,
             overflowY: 'auto',
-            background: '#f9fafb', // contrasts with white container
+            background: '#f9fafb',
             borderTop: '1px solid #e5e7eb',
             borderBottom: '1px solid #e5e7eb',
             boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.05)'
@@ -256,16 +269,11 @@ export default function App() {
           </div>
 
           <button
-            onClick={() => {
-              if (!busy) send()
-            }}
+            onClick={() => { if (!busy) send() }}
             disabled={busy || !input.trim()}
             title={
-              busy
-                ? 'Please wait for the assistant to finish'
-                : input.trim()
-                ? 'Send'
-                : 'Type a message'
+              busy ? 'Please wait for the assistant to finish'
+              : input.trim() ? 'Send' : 'Type a message'
             }
             style={{
               padding: '10px 16px',
