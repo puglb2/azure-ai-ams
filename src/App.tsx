@@ -171,7 +171,7 @@ export default function App() {
             borderBottom: '1px solid #f5d0a9'
           }}
         >
-          <strong>Not for emergencies.</strong> If you’re in immediate danger, call <strong>988</strong>.
+          <strong>Not for emergencies.</strong> If you’re in immediate danger, call <strong>988</strong> for suicide hotline, or <strong>911</strong> for other emergencies.
         </div>
 
         {/* Chat area */}
