@@ -148,7 +148,7 @@ export default function App() {
     style={{
       maxWidth: 760,
       width: '100%',
-      height: '60vh', // keeps it from overflowing vertically
+      height: '70vh', // keeps it from overflowing vertically
       display: 'flex',
       flexDirection: 'column',
       background: '#ffffff',
@@ -171,7 +171,7 @@ export default function App() {
             borderBottom: '1px solid #f5d0a9'
           }}
         >
-          <strong>Not for emergencies.</strong> If you’re in immediate danger, call <strong>988</strong> for suicide hotline, or <strong>911</strong> for other emergencies.
+          <strong>Not for emergencies.</strong> If you’re in immediate danger, call <strong>988</strong> for suicide hotline, or <strong>911</strong> for any other emergencies.
         </div>
 
         {/* Chat area */}
@@ -212,7 +212,6 @@ export default function App() {
         >
           <div
             style={{
-              position: 'relative',
               flex: 1,
               display: 'flex',
               alignItems: 'center',
