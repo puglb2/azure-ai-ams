@@ -39,7 +39,7 @@ function Bubble({ role, children }: { role: Role; children: React.ReactNode }) {
     >
       <div
         style={{
-          maxWidth: 560,
+          maxWidth: 760,
           background: isUser ? '#111827' : '#ffffff',
           color: isUser ? '#ffffff' : '#111827',
           border: isUser ? '1px solid #111827' : '1px solid #e5e7eb',
@@ -64,21 +64,7 @@ export default function App() {
   const inputRef = useRef<HTMLInputElement | null>(null)
   const didInit = useRef(false)
 
-  // keep scroll at bottom
-  useEffect(() => {
-    const el = scrollerRef.current
-    if (el) el.scrollTop = el.scrollHeight
-  }, [messages, busy])
-
-  // focus on mount + after each reply
-  useEffect(() => {
-    inputRef.current?.focus()
-  }, [])
-  useEffect(() => {
-    if (!busy) inputRef.current?.focus()
-  }, [busy])
-
-  // ❗ Lock the page/body scroll; only chat area will scroll
+  // 🔒 Lock the page/body scroll; only chat area will scroll
   useEffect(() => {
     const prevOverflow = document.body.style.overflow
     const prevOB = (document.body.style as any).overscrollBehavior
@@ -89,6 +75,14 @@ export default function App() {
       ;(document.body.style as any).overscrollBehavior = prevOB || ''
     }
   }, [])
+
+  // focus on mount + after each reply (no auto-scroll)
+  useEffect(() => {
+    inputRef.current?.focus()
+  }, [])
+  useEffect(() => {
+    if (!busy) inputRef.current?.focus()
+  }, [busy])
 
   // one-time welcome (guard strict-mode double calls)
   useEffect(() => {
@@ -148,19 +142,20 @@ export default function App() {
     <div
       style={{
         fontFamily: 'system-ui, -apple-system, Segoe UI, Roboto, sans-serif',
-        height: '100vh',           // fill viewport
-        overflow: 'hidden',        // 🚫 page scroll
+        height: '100vh',
+        overflow: 'hidden', // no page scroll
         background: 'linear-gradient(180deg, #e5e7eb 0%, #f8fafc 100%)',
-        paddingTop: 20,
+        padding: 12,
         display: 'flex',
-        justifyContent: 'center'
+        justifyContent: 'center',
+        alignItems: 'center' // center the big card
       }}
     >
       <div
         style={{
-          maxWidth: 860,
-          width: '100%',
-          height: '70vh',          // chat card height
+          width: '96vw',        // nearly full width
+          maxWidth: 1400,       // cap on ultra-wide screens
+          height: '92vh',       // nearly full height
           display: 'flex',
           flexDirection: 'column',
           background: '#ffffff',
@@ -187,7 +182,7 @@ export default function App() {
           for suicide hotline, or <strong>911</strong> for any other emergencies.
         </div>
 
-        {/* Chat area (this is the ONLY scroller) */}
+        {/* Chat area (only scroller; no auto-scroll) */}
         <div
           ref={scrollerRef}
           style={{
