@@ -64,7 +64,7 @@ export default function App() {
   const inputRef = useRef<HTMLInputElement | null>(null)
   const didInit = useRef(false)
 
-  // 🔒 Lock the page/body scroll; only chat area will scroll
+  // 🔒 Lock body scroll
   useEffect(() => {
     const prevOverflow = document.body.style.overflow
     const prevOB = (document.body.style as any).overscrollBehavior
@@ -76,15 +76,11 @@ export default function App() {
     }
   }, [])
 
-  // focus on mount + after each reply (no auto-scroll)
-  useEffect(() => {
-    inputRef.current?.focus()
-  }, [])
-  useEffect(() => {
-    if (!busy) inputRef.current?.focus()
-  }, [busy])
+  // focus management
+  useEffect(() => { inputRef.current?.focus() }, [])
+  useEffect(() => { if (!busy) inputRef.current?.focus() }, [busy])
 
-  // one-time welcome (guard strict-mode double calls)
+  // one-time welcome
   useEffect(() => {
     if (didInit.current) return
     didInit.current = true
@@ -97,7 +93,7 @@ export default function App() {
     ])
   }, [])
 
-  // helper: wait
+  // helper: delay
   const wait = (ms: number) => new Promise(res => setTimeout(res, ms))
 
   async function send() {
@@ -108,7 +104,6 @@ export default function App() {
     setBusy(true)
 
     try {
-      // only last 34 turns
       const history = messages.slice(-34).map(m => ({ role: m.role, content: m.content }))
       const res = await fetch('/api/chat?ui=1&debug=1', {
         method: 'POST',
@@ -131,12 +126,12 @@ export default function App() {
       const err = typeof data?.error === 'string' ? data.error.trim() : ''
       const reply = raw || (err ? `Sorry — ${err}` : 'Sorry — empty reply.')
 
-      // ⌛ Human-speed delay (twice as fast as before; ~100–150ms/char), but no visible typing
-      const perChar = 100 + Math.random() * 50 // 100–150ms per char
-      const totalDelay = Math.min(reply.length * perChar, 6000) // soft cap at 6s
+      // ⏳ Delay simulating natural human typing speed (100–150 ms/char, capped)
+      const perChar = 100 + Math.random() * 50
+      const totalDelay = Math.min(reply.length * perChar, 6000)
       await wait(totalDelay)
 
-      // Show the full assistant message at once
+      // Show full message instantly (no typing visible)
       setMessages(m => [...m, { role: 'assistant', content: reply }])
     } catch (e) {
       console.error('chat error', e)
@@ -152,19 +147,19 @@ export default function App() {
       style={{
         fontFamily: 'system-ui, -apple-system, Segoe UI, Roboto, sans-serif',
         height: '100vh',
-        overflow: 'hidden', // no page scroll
+        overflow: 'hidden',
         background: 'linear-gradient(180deg, #e5e7eb 0%, #f8fafc 100%)',
         padding: 12,
         display: 'flex',
         justifyContent: 'center',
-        alignItems: 'center' // center the big card
+        alignItems: 'center'
       }}
     >
       <div
         style={{
-          width: '96vw',        // nearly full width
-          maxWidth: 1400,       // cap on ultra-wide screens
-          height: '92vh',       // nearly full height
+          width: '96vw',
+          maxWidth: 1400,
+          height: '92vh',
           display: 'flex',
           flexDirection: 'column',
           background: '#ffffff',
@@ -191,7 +186,7 @@ export default function App() {
           for suicide hotline, or <strong>911</strong> for any other emergencies.
         </div>
 
-        {/* Chat area (only scroller; no auto-scroll, no typing indicator) */}
+        {/* Chat area */}
         <div
           ref={scrollerRef}
           style={{
@@ -199,7 +194,7 @@ export default function App() {
             padding: 20,
             overflowY: 'auto',
             background: '#f9fafb',
-            borderTop: '1px solid '#e5e7eb',
+            borderTop: '1px solid #e5e7eb',
             borderBottom: '1px solid #e5e7eb',
             boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.05)'
           }}
