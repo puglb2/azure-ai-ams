@@ -15,7 +15,7 @@ function Header() {
         }}
         aria-hidden
       >
-        A
+        P
       </div>
       <div>
         <div style={{ fontSize: 16, fontWeight: 700 }}>Polaris | AMS Intake Assistant</div>
