@@ -18,7 +18,7 @@ function Header() {
         A
       </div>
       <div>
-        <div style={{ fontSize: 16, fontWeight: 700 }}>AMS Intake Assistant</div>
+        <div style={{ fontSize: 16, fontWeight: 700 }}>Polaris | AMS Intake Assistant</div>
         <div style={{ fontSize: 12, color: '#6b7280' }}>
           Decide between therapy, psychiatry, or both—and get matched in-network.
         </div>
@@ -88,7 +88,7 @@ export default function App() {
       {
         role: 'assistant',
         content:
-          "Hi there! I’m the AMS Intake Assistant. Can you share a little bit about how you've been feeling?"
+          "Hi there! My name is Polaris, I’m the AMS Intake Assistant. Can you share a little bit about how you've been feeling?"
       }
     ])
   }, [])
@@ -206,7 +206,7 @@ export default function App() {
 
           {busy && (
             <div style={{ marginTop: 6, color: '#6b7280', fontStyle: 'italic', fontSize: 13 }}>
-              Assistant is typing…
+              Polaris is typing…
             </div>
           )}
         </div>
