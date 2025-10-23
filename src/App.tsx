@@ -64,7 +64,7 @@ export default function App() {
   const inputRef = useRef<HTMLInputElement | null>(null)
   const didInit = useRef(false)
 
-  // 🔒 Lock the page/body scroll; only chat area will scroll
+  //  Lock the page/body scroll; only chat area will scroll
   useEffect(() => {
     const prevOverflow = document.body.style.overflow
     const prevOB = (document.body.style as any).overscrollBehavior
@@ -92,7 +92,7 @@ export default function App() {
       {
         role: 'assistant',
         content:
-          "Hi there! I’m the AMS Intake Assistant. Can you share a little bit about how you've been feeling?"
+          "Hi there! I’m Polaris; AMS' Intake Assistant. Can you share a little bit about how you've been feeling?"
       }
     ])
   }, [])
@@ -128,7 +128,26 @@ export default function App() {
       const err = typeof data?.error === 'string' ? data.error.trim() : ''
       const reply = raw || (err ? `Sorry — ${err}` : 'Sorry — empty reply.')
 
-      setMessages(m => [...m, { role: 'assistant', content: reply }])
+      // ⌨️ Human-speed typing effect (~250ms/char with slight variability)
+      setMessages(m => [...m, { role: 'assistant', content: '' }]) // start empty last bubble
+      for (let i = 0; i < reply.length; i++) {
+        const char = reply[i]
+        setMessages(m => {
+          const updated = [...m]
+          const last = updated[updated.length - 1]
+          // guard in case something else pushed a message
+          if (last && last.role === 'assistant') {
+            updated[updated.length - 1] = { role: 'assistant', content: last.content + char }
+          } else {
+            updated.push({ role: 'assistant', content: char })
+          }
+          return updated
+        })
+        // average 250ms per char (200–300ms jitter)
+        const delay = 200 + Math.random() * 100
+        // prevent extremely slow for very long replies: cap total per-char delay to ~6s
+        await new Promise(res => setTimeout(res, delay))
+      }
     } catch (e) {
       console.error('chat error', e)
       setMessages(m => [...m, { role: 'assistant', content: 'Sorry — network error.' }])
@@ -240,7 +259,7 @@ export default function App() {
                   if (!busy) send()
                 }
               }}
-              placeholder={busy ? 'Assistant is typing…' : 'Type a message'}
+              placeholder={busy ? 'Polaris is typing…' : 'Type a message'}
               style={{
                 flex: 1,
                 outline: 'none',
