@@ -64,7 +64,7 @@ export default function App() {
   const inputRef = useRef<HTMLInputElement | null>(null)
   const didInit = useRef(false)
 
-  //  Lock the page/body scroll; only chat area will scroll
+  // 🔒 Lock the page/body scroll; only chat area will scroll
   useEffect(() => {
     const prevOverflow = document.body.style.overflow
     const prevOB = (document.body.style as any).overscrollBehavior
@@ -92,10 +92,13 @@ export default function App() {
       {
         role: 'assistant',
         content:
-          "Hi there! I’m Polaris; AMS' Intake Assistant. Can you share a little bit about how you've been feeling?"
+          "Hi there! I’m the AMS Intake Assistant. Can you share a little bit about how you've been feeling?"
       }
     ])
   }, [])
+
+  // helper: wait
+  const wait = (ms: number) => new Promise(res => setTimeout(res, ms))
 
   async function send() {
     const text = input.trim()
@@ -128,26 +131,13 @@ export default function App() {
       const err = typeof data?.error === 'string' ? data.error.trim() : ''
       const reply = raw || (err ? `Sorry — ${err}` : 'Sorry — empty reply.')
 
-      // ⌨️ Human-speed typing effect (~250ms/char with slight variability)
-      setMessages(m => [...m, { role: 'assistant', content: '' }]) // start empty last bubble
-      for (let i = 0; i < reply.length; i++) {
-        const char = reply[i]
-        setMessages(m => {
-          const updated = [...m]
-          const last = updated[updated.length - 1]
-          // guard in case something else pushed a message
-          if (last && last.role === 'assistant') {
-            updated[updated.length - 1] = { role: 'assistant', content: last.content + char }
-          } else {
-            updated.push({ role: 'assistant', content: char })
-          }
-          return updated
-        })
-        // average 250ms per char (200–300ms jitter)
-        const delay = 200 + Math.random() * 100
-        // prevent extremely slow for very long replies: cap total per-char delay to ~6s
-        await new Promise(res => setTimeout(res, delay))
-      }
+      // ⌛ Human-speed delay (twice as fast as before; ~100–150ms/char), but no visible typing
+      const perChar = 100 + Math.random() * 50 // 100–150ms per char
+      const totalDelay = Math.min(reply.length * perChar, 6000) // soft cap at 6s
+      await wait(totalDelay)
+
+      // Show the full assistant message at once
+      setMessages(m => [...m, { role: 'assistant', content: reply }])
     } catch (e) {
       console.error('chat error', e)
       setMessages(m => [...m, { role: 'assistant', content: 'Sorry — network error.' }])
@@ -201,7 +191,7 @@ export default function App() {
           for suicide hotline, or <strong>911</strong> for any other emergencies.
         </div>
 
-        {/* Chat area (only scroller; no auto-scroll) */}
+        {/* Chat area (only scroller; no auto-scroll, no typing indicator) */}
         <div
           ref={scrollerRef}
           style={{
@@ -209,7 +199,7 @@ export default function App() {
             padding: 20,
             overflowY: 'auto',
             background: '#f9fafb',
-            borderTop: '1px solid #e5e7eb',
+            borderTop: '1px solid '#e5e7eb',
             borderBottom: '1px solid #e5e7eb',
             boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.05)'
           }}
@@ -219,12 +209,6 @@ export default function App() {
               {m.content}
             </Bubble>
           ))}
-
-          {busy && (
-            <div style={{ marginTop: 6, color: '#6b7280', fontStyle: 'italic', fontSize: 13 }}>
-              Assistant is typing…
-            </div>
-          )}
         </div>
 
         {/* Composer */}
@@ -259,7 +243,7 @@ export default function App() {
                   if (!busy) send()
                 }
               }}
-              placeholder={busy ? 'Polaris is typing…' : 'Type a message'}
+              placeholder={busy ? 'Assistant is thinking…' : 'Type a message'}
               style={{
                 flex: 1,
                 outline: 'none',
