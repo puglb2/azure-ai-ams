@@ -93,7 +93,6 @@ export default function App() {
     ])
   }, [])
 
-  // helper: delay
   const wait = (ms: number) => new Promise(res => setTimeout(res, ms))
 
   async function send() {
@@ -126,12 +125,12 @@ export default function App() {
       const err = typeof data?.error === 'string' ? data.error.trim() : ''
       const reply = raw || (err ? `Sorry — ${err}` : 'Sorry — empty reply.')
 
-      // ⏳ Delay simulating natural human typing speed (100–150 ms/char, capped)
+      // ⏳ Simulate human typing delay (~100–150ms/char, capped at 6s)
       const perChar = 100 + Math.random() * 50
       const totalDelay = Math.min(reply.length * perChar, 6000)
       await wait(totalDelay)
 
-      // Show full message instantly (no typing visible)
+      // Show message all at once
       setMessages(m => [...m, { role: 'assistant', content: reply }])
     } catch (e) {
       console.error('chat error', e)
@@ -204,6 +203,12 @@ export default function App() {
               {m.content}
             </Bubble>
           ))}
+
+          {busy && (
+            <div style={{ marginTop: 6, color: '#6b7280', fontStyle: 'italic', fontSize: 13 }}>
+              Assistant is typing…
+            </div>
+          )}
         </div>
 
         {/* Composer */}
@@ -238,7 +243,7 @@ export default function App() {
                   if (!busy) send()
                 }
               }}
-              placeholder={busy ? 'Assistant is thinking…' : 'Type a message'}
+              placeholder={busy ? 'Assistant is typing…' : 'Type a message'}
               style={{
                 flex: 1,
                 outline: 'none',
