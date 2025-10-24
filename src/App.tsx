@@ -88,7 +88,7 @@ export default function App() {
       {
         role: 'assistant',
         content:
-          "Hi there! My name is Polaris, I’m the AMS Intake Assistant. Can you share a little bit about how you've been feeling?"
+          "Hi, I’m Polaris, your AMS Intake Assistant. Can you tell me a little bit about how you’ve been feeling?"
       }
     ])
   }, [])
